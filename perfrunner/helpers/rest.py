@@ -11,7 +11,7 @@ from requests.exceptions import ConnectionError
 
 import perfrunner.helpers.misc as misc
 
-MAX_RETRY = 5
+MAX_RETRY = 10
 RETRY_DELAY = 5
 
 
@@ -59,7 +59,6 @@ class RestHelper(object):
 
     def set_data_path(self, host_port, data_path, index_path):
         logger.info('Configuring data paths: {}'.format(host_port))
-
         api = 'http://{}/nodes/self/controller/settings'.format(host_port)
         data = {
             'path': data_path, 'index_path': index_path

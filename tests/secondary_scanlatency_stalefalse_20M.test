@@ -23,6 +23,7 @@ workers = 20
 name = myindex
 field = alt_email
 stale = false
+db = memdb
 
 [access]
 creates = 1

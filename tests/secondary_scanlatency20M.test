@@ -17,7 +17,7 @@ view_percentage = 100
 [load]
 items = 20000000
 size = 2048
-workers = 50
+workers = 100
 
 [secondary]
 name = myindex
@@ -31,4 +31,4 @@ updates = 48
 deletes = 1
 throughput = 100000
 items = 20000000
-workers = 40
+workers = 100

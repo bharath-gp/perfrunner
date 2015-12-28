@@ -11,8 +11,8 @@ from requests.exceptions import ConnectionError
 
 import perfrunner.helpers.misc as misc
 
-MAX_RETRY = 10
-RETRY_DELAY = 5
+MAX_RETRY = 20
+RETRY_DELAY = 10
 
 
 @decorator

@@ -663,7 +663,9 @@ class SecondaryIndexSettings(object):
         for option in options:
             if option.startswith('indexer.settings') or \
                option.startswith('projector.settings') or \
-               option.startswith('queryport.client.settings'):
+               option.startswith('queryport.client.settings') or \
+               option.startswith('projector') or \
+               option.startswith('indexer'):
 
                 value = options.get(option)
                 try:

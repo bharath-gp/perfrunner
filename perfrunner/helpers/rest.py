@@ -114,7 +114,7 @@ class RestHelper(object):
 
     def set_index_settings(self, host_port, override_settings):
         host = host_port.replace('8091', '9102')
-        api = 'http://{}/settings?internal=ok'.format(host)
+        api = 'http://{}/settings'.format(host)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
         settings = self.get(url=api).json()

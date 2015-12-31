@@ -117,9 +117,10 @@ class RestHelper(object):
         api = 'http://{}/settings'.format(host)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
-        settings = self.get(url="{}?internal=ok".format(api)).json()
+        settings1 = self.get(url="{}?internal=ok".format(api)).json()
+        settings = self.get(url=api).json()
         for override, value in override_settings.items():
-            if override not in settings:
+            if override not in settings1:
                 logger.error('Cannot change 2i setting {} to {}, setting invalid'
                              .format(override, value))
                 continue

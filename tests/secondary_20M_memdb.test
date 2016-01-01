@@ -1,6 +1,6 @@
 [test_case]
 test = perfrunner.tests.secondary.InitialandIncrementalSecondaryIndexTest
-title = 1 bucket x 20M x 2KB,single 2i index, no mutations during initial build only
+title = 1 bucket x 20M x 2KB,single 2i index, no mutations during initial build only, memdb
 summary = Secondary Indexing test, 4 KV nodes, 1 2i node 1 bucket x 20M x 2KB
 larger_is_better = false
 
@@ -16,15 +16,52 @@ view_percentage = 100
 [load]
 items = 20000000
 size = 2048
-workers = 20
+workers = 250
 
 [secondary]
 name = myindex
 field = alt_email
 db = memdb
+queryport.client.settings.poolSize = 1000,
+indexer.settings.log_level = "info",
+indexer.settings.fast_flush_mode = false,
+indexer.mutation_queue.allocPollInterval = 1,
+indexer.settings.inmemory_snapshot.interval = 20,
+indexer.settings.scan_timeout = 0,
+indexer.settings.memProfFname = "",
+indexer.settings.sliceBufSize = 50000,
+indexer.settings.cpuProfile = false,
+indexer.settings.compaction.check_period = 30,
+indexer.numSliceWriters = 32,
+indexer.settings.memory_quota = 268435456,
+indexer.settings.largeSnapshotThreshold = 500,
+indexer.storage.commitPollInterval = 1,
+indexer.stream_reader.syncBatchInterval = 8,
+indexer.settings.statsLogDumpInterval = 60,
+indexer.settings.recovery.max_rollbacks = 5,
+indexer.settings.maxVbQueueLength = 10000,
+indexer.settings.persisted_snapshot.interval = 600000,
+indexer.settings.max_writer_lock_prob = 20,
+indexer.settings.memProfile = false,
+indexer.settings.send_buffer_size = 1024,
+indexer.settings.compaction.min_size = 524288000,
+indexer.settings.wal_size = 4096,
+queryport.client.settings.poolOverflow = 30,
+indexer.settings.compaction.min_frag = 30,
+projector.settings.log_level = "info",
+indexer.settings.cpuProfFname = "",
+projector.maxCpuPercent = 2400,
+indexer.settings.persisted_snapshot_init_build.interval = 6000000,
+indexer.stream_reader.mutationBuffer = 200000,
+indexer.settings.smallSnapshotThreshold = 200,
+indexer.settings.max_cpu_percent = 3200,
+indexer.settings.compaction.interval = "00:00,00:00",
+indexer.settings.bufferPoolBlockSize = 16384,
+indexer.stream_reader.workerBuffer = 100000
 
 [access]
 creates = 100
 ops = 20000000
 items = 20000000
-workers = 20
+throughput = 200000
+workers = 250

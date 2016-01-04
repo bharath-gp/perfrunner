@@ -16,7 +16,7 @@ view_percentage = 100
 [load]
 items = 20000000
 size = 2048
-workers = 250
+workers = 20
 
 [secondary]
 name = myindex
@@ -60,8 +60,7 @@ indexer.settings.bufferPoolBlockSize = 16384
 indexer.stream_reader.workerBuffer = 100000
 
 [access]
-creates = 100
+updates = 100
 ops = 20000000
 items = 20000000
-throughput = 200000
-workers = 250
+workers = 20

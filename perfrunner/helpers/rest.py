@@ -128,6 +128,9 @@ class RestHelper(object):
             logger.info('Changing 2i setting {} to {}'.format(override, value))
 
         self.post(url=api, data=json.dumps(settings), headers=headers)
+        time.sleep(10)
+        new_settings = self.get(url="{}?internal=ok".format(api)).json()
+        logger.info("New 2i settings: {}".format(new_settings))
 
     def set_services(self, host_port, services):
         logger.info('Configuring services on master node: {}'.format(host_port))

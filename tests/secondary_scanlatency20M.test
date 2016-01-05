@@ -17,18 +17,17 @@ view_percentage = 100
 [load]
 items = 20000000
 size = 2048
-workers = 100
+workers = 20
 
 [secondary]
 name = myindex
 field = alt_email
-db = memdb
 
 [access]
 creates = 1
 reads = 50
 updates = 48
 deletes = 1
-throughput = 100000
+throughput = 10000
 items = 20000000
-workers = 100
+workers = 20

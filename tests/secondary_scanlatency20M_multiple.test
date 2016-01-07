@@ -22,7 +22,6 @@ workers = 20
 [secondary]
 name = myindex1,myindex2,myindex3,myindex4,myindex5
 field = alt_email,city,name,coins,achievements
-db = memdb
 
 [access]
 creates = 1

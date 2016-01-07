@@ -432,6 +432,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         from_ts, to_ts = self.build_secondaryindex()
         self.access_bg()
         self.apply_scanworkload()
+        logger.info(*self.metric_helper.calc_secondaryscan_latency(percentile=80))
         if self.test_config.stats_settings.enabled:
             self.reporter.post_to_sf(
                 *self.metric_helper.calc_secondaryscan_latency(percentile=80)

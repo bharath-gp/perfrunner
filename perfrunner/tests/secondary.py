@@ -337,6 +337,7 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
         self.apply_scanworkload()
         scanthr, rowthr = self.read_scanresults()
         logger.info('Scan throughput: {}'.format(scanthr))
+        logger.info('Rows throughput: {}'.format(rowthr))
         if self.test_config.stats_settings.enabled:
             self.reporter.post_to_sf(
                 round(scanthr, 1)

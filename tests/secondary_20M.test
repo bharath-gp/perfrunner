@@ -15,9 +15,9 @@ db_percentage = 100
 view_percentage = 100
 
 [load]
-items = 100000000
+items = 20000000
 size = 2048
-workers = 50
+workers = 20
 
 [secondary]
 name = myindex
@@ -25,7 +25,6 @@ field = alt_email
 
 [access]
 updates = 100
-ops = 100000000
-items = 100000000
-throughput = 50000
-workers = 50
+ops = 20000000
+items = 20000000
+workers = 20

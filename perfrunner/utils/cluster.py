@@ -58,12 +58,15 @@ class ClusterManager(object):
                 self.rest.set_query_settings(server, settings)
 
     def set_index_settings(self):
-        settings = self.test_config.secondaryindex_settings.settings
-        for _, servers in self.cluster_spec.yield_servers_by_role('index'):
-            for server in servers:
-                self.rest.set_index_settings(server, settings)
-        self.remote.restart()
-        time.sleep(60)
+        if self.test_config.secondaryindex_settings.db != 'memdb':
+            settings = self.test_config.secondaryindex_settings.settings
+            for _, servers in self.cluster_spec.yield_servers_by_role('index'):
+                for server in servers:
+                    self.rest.set_index_settings(server, settings)
+            self.remote.restart()
+            time.sleep(60)
+        else:
+            logger.info("DB type is memdb. Not setting the indexer settings to take the default settings")
 
     def set_services(self):
         for (_, servers), initial_nodes in zip(self.clusters(),

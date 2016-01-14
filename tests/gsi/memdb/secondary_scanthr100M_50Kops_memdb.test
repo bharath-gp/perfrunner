@@ -23,9 +23,6 @@ workers = 50
 name = myindex
 field = alt_email
 db = memdb
-indexer.numSliceWriters = 32
-projector.maxCpuPercent = 3200
-indexer.settings.max_cpu_percent = 3200
 
 [access]
 creates = 1

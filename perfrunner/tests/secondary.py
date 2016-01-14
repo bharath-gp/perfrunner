@@ -49,6 +49,7 @@ class SecondaryIndexTest(PerfTest):
         self.secondaryDB = None
         if self.test_config.secondaryindex_settings.db == 'memdb':
             self.secondaryDB = 'memdb'
+            self.COLLECTORS['secondary_gcstats'] = True
         logger.info('secondary storage DB..{}'.format(self.secondaryDB))
 
         self.indexes = self.test_config.secondaryindex_settings.name.split(',')

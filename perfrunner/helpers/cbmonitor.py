@@ -9,7 +9,7 @@ from cbagent.collectors import (NSServer, PS, TypePerf, IO, Net, ActiveTasks,
                                 SpringLatency, SpringQueryLatency,
                                 SpringSpatialQueryLatency,
                                 SpringN1QLQueryLatency, SecondaryStats, SecondaryLatencyStats,
-                                N1QLStats, SecondaryDebugStats, SecondaryGCStats, ObserveLatency, XdcrLag)
+                                N1QLStats, SecondaryDebugStats, ObserveLatency, XdcrLag)
 from cbagent.metadata_client import MetadataClient
 from decorator import decorator
 from logger import logger
@@ -108,7 +108,7 @@ class CbAgent(object):
                            index_latency=False, persist_latency=False,
                            replicate_latency=False, xdcr_lag=False,
                            secondary_latency=False,
-                           secondary_debugstats=False, secondary_gcstats=False):
+                           secondary_debugstats=False):
         clusters = self.clusters.keys()
 
         self.prepare_ns_server(clusters)
@@ -133,8 +133,6 @@ class CbAgent(object):
             self.prepare_secondary_debugstats(clusters)
         if secondary_latency:
             self.prepare_secondary_latency(clusters)
-        if secondary_gcstats:
-            self.prepare_secondary_gcstats(clusters)
         if n1ql_stats:
             self.prepare_n1ql_stats(clusters)
         if index_latency:
@@ -178,13 +176,6 @@ class CbAgent(object):
             settings.cluster = cluster
             settings.master_node = self.clusters[cluster]
             self.collectors.append(SecondaryLatencyStats(settings))
-
-    def prepare_secondary_gcstats(self, clusters):
-        for cluster in clusters:
-            settings = copy(self.settings)
-            settings.cluster = cluster
-            settings.master_node = self.clusters[cluster]
-            self.collectors.append(SecondaryGCStats(settings))
 
     def prepare_n1ql_stats(self, clusters):
         for cluster in clusters:

@@ -25,7 +25,7 @@ field = alt_email
 db = memdb
 
 [access]
-creates = 100
+updates = 100
 ops = 100000000
 items = 100000000
 throughput = 50000

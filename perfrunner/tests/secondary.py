@@ -9,7 +9,9 @@ import pdb
 from logger import logger
 
 from perfrunner.helpers.cbmonitor import with_stats
+from perfrunner.helpers.misc import target_hash, pretty_dict
 from perfrunner.helpers.remote import RemoteHelper
+from perfrunner.settings import TargetSettings
 from perfrunner.tests import PerfTest
 
 
@@ -188,6 +190,20 @@ class InitialSecondaryIndexTest(SecondaryIndexTest):
                                                   index_type='Initial')
         )
 
+class TargetIteratorFor2i(object):
+    def __init__(self, cluster_spec, test_config, prefix=None):
+        self.cluster_spec = cluster_spec
+        self.test_config = test_config
+        self.prefix = prefix
+
+    def __iter__(self):
+        password = self.test_config.bucket.password
+        prefix = self.prefix
+        for master in self.cluster_spec.yield_servers():
+            for bucket in self.test_config.buckets:
+                if self.prefix is None:
+                    prefix = target_hash(master.split(':')[0])
+                yield TargetSettings(master, bucket, password, prefix)
 
 class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
 
@@ -213,7 +229,8 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
                                                self.active_indexes, numitems)
 
     def run(self):
-        self.load()
+        target_iterator = TargetIteratorFor2i(self.cluster_spec, self.test_config)
+        self.load(target_iterator=target_iterator)
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()

@@ -29,7 +29,7 @@ class TargetIterator(object):
     def __iter__(self):
         password = self.test_config.bucket.password
         prefix = self.prefix
-        for master in self.cluster_spec.yield_servers():
+        for master in self.cluster_spec.yield_masters():
             for bucket in self.test_config.buckets:
                 if self.prefix is None:
                     prefix = target_hash(master.split(':')[0])

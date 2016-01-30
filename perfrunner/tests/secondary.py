@@ -229,8 +229,8 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
                                                self.active_indexes, numitems)
 
     def run(self):
-        target_iterator = TargetIteratorFor2i(self.cluster_spec, self.test_config)
-        self.load(target_iterator=target_iterator)
+        #target_iterator = TargetIteratorFor2i(self.cluster_spec, self.test_config)
+        self.load()
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()

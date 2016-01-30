@@ -211,7 +211,7 @@ class ClusterManager(object):
         for host_port, initial_nodes in zip(self.servers(),
                                             self.initial_nodes):
             host = host_port.split(':')[0]
-            memcached_port = self.rest.get_memcached_port(host_port)
+            memcached_port = 11210
             for bucket in self.test_config.buckets:
                 for key, val in watermark_settings.items():
                     val = self.memcached.calc_watermark(val, self.mem_quota)

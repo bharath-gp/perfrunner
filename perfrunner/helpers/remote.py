@@ -7,7 +7,7 @@ from fabric.exceptions import CommandTimeout
 from logger import logger
 
 from perfrunner.helpers.misc import uhex
-
+from random import uniform
 
 @decorator
 def all_hosts(task, *args, **kargs):
@@ -89,6 +89,20 @@ class RemoteHelper(object):
         else:
             return 'Cygwin'
 
+current_host_index = -1
+
+
+class CurrentHostMutex:
+
+    def __init__(self):
+        return
+
+    @staticmethod
+    def next_host_index():
+        global current_host_index
+        current_host_index += 1
+        return current_host_index
+
 
 class RemoteLinuxHelper(object):
 
@@ -103,7 +117,6 @@ class RemoteLinuxHelper(object):
         self.os = os
         self.hosts = tuple(cluster_spec.yield_hostnames())
         self.kv_hosts = tuple(cluster_spec.yield_kv_servers())
-        self.current_host = self.host_index()
         self.cluster_spec = cluster_spec
         self.test_config = test_config
         self.env = {}
@@ -210,7 +223,10 @@ class RemoteLinuxHelper(object):
         logger.info("running spring on kv nodes")
         number_of_kv_nodes = self.kv_hosts.__len__()
         existing_item = operation = 0
-        host = self.current_host.next()
+        sleep_time = uniform(1, number_of_kv_nodes)
+        time.sleep(sleep_time)
+        host = CurrentHostMutex.next_host_index()
+        logger.info("current_host_index {}".format(host))
         if host != number_of_kv_nodes - 1:
             if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
                 operation = int(operations / (number_of_kv_nodes * 100)) * 100
@@ -221,7 +237,7 @@ class RemoteLinuxHelper(object):
                 operation = operations - (int(operations / (number_of_kv_nodes * 100)) * 100 * (number_of_kv_nodes - 1))
                 if creates != 0:
                     existing_item = operation * host + existing_items
-        logger.info(host)
+        time.sleep(number_of_kv_nodes * 2 - sleep_time)
         cmdstr = "spring -c {} -r {} -u {} -d {} -e {} " \
                  "-s {} -i {} -w {} -W {} -n {} " \
                  "cb://Administrator:password@{}:8091/bucket-1".format(creates, reads, updates, deletes, expires, size,

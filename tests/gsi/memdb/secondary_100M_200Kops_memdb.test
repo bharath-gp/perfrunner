@@ -21,11 +21,11 @@ view_percentage = 100
 [load]
 items = 100000000
 size = 2048
-workers = 200
+spring_workers = 200
 
 [secondary]
 name = myindex
-field = alt_email
+field = email
 db = memdb
 
 [access]
@@ -33,4 +33,4 @@ updates = 100
 ops = 100000000
 items = 100000000
 throughput = 200000
-workers = 200
+spring_workers = 200

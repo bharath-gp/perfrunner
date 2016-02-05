@@ -233,7 +233,7 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
             existing_items = load_settings.items
             items_in_working_set = access_settings.working_set
             operations_to_hit_working_set = access_settings.working_set_access
-            workers = access_settings.workers
+            workers = access_settings.spring_workers
             self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
                                          expires=expires, operations=operations, throughput=throughput, size=size,
                                          existing_items=existing_items, items_in_working_set=items_in_working_set,
@@ -258,7 +258,7 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
             size = load_settings.size
             items_in_working_set = int(load_settings.working_set)
             operations_to_hit_working_set = load_settings.working_set_access
-            workers = load_settings.workers
+            workers = load_settings.spring_workers
             self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
                                          expires=expires, operations=operations, throughput=throughput, size=size,
                                          items_in_working_set=items_in_working_set,

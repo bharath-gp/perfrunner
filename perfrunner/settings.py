@@ -491,6 +491,7 @@ class PhaseSettings(object):
     N1QL_WORKERS = 0
     N1QL_OP = 'read'
     DCP_WORKERS = 0
+    SPRING_WORKERS = 100
 
     SEQ_READS = False
     SEQ_UPDATES = False
@@ -525,13 +526,14 @@ class PhaseSettings(object):
                                                   self.WORKING_SET_ACCESS))
 
         self.workers = int(options.get('workers', self.WORKERS))
+
         self.query_workers = int(options.get('query_workers',
                                              self.QUERY_WORKERS))
         self.n1ql_workers = int(options.get('n1ql_workers',
                                             self.N1QL_WORKERS))
         self.n1ql_op = options.get('n1ql_op', self.N1QL_OP)
         self.dcp_workers = int(options.get('dcp_workers', self.DCP_WORKERS))
-
+        self.spring_workers = int(options.get('spring_workers', self.SPRING_WORKERS))
         self.n1ql_queries = []
         if 'n1ql_queries' in options:
             self.n1ql_queries = options.get('n1ql_queries').strip().split(',')

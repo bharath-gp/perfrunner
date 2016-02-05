@@ -103,6 +103,7 @@ class RemoteLinuxHelper(object):
         self.os = os
         self.hosts = tuple(cluster_spec.yield_hostnames())
         self.kv_hosts = tuple(cluster_spec.yield_kv_servers())
+        self.current_host = self.host_index()
         self.cluster_spec = cluster_spec
         self.test_config = test_config
         self.env = {}
@@ -209,19 +210,18 @@ class RemoteLinuxHelper(object):
         logger.info("running spring on kv nodes")
         number_of_kv_nodes = self.kv_hosts.__len__()
         existing_item = operation = 0
-        if self.host_index != number_of_kv_nodes - 1:
+        host = self.current_host.next()
+        if host != number_of_kv_nodes - 1:
             if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
                 operation = int(operations / (number_of_kv_nodes * 100)) * 100
                 if creates != 0:
-                    existing_item = operation * self.host_index + existing_items
+                    existing_item = operation * host + existing_items
         else:
             if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
                 operation = operations - (int(operations / (number_of_kv_nodes * 100)) * 100 * (number_of_kv_nodes - 1))
                 if creates != 0:
-                    existing_item = operation * self.host_index + existing_items
-        self.host_index += 1
-        logger.info(self.host_index)
-        rest_credentials = self.cluster_spec.rest_credentials
+                    existing_item = operation * host + existing_items
+        logger.info(host)
         cmdstr = "spring -c {} -r {} -u {} -d {} -e {} " \
                  "-s {} -i {} -w {} -W {} -n {} " \
                  "cb://Administrator:password@{}:8091/bucket-1".format(creates, reads, updates, deletes, expires, size,
@@ -233,6 +233,11 @@ class RemoteLinuxHelper(object):
         if throughput != float('inf'):
             cmdstr += " -t {}".format(throughput)
         run(cmdstr)
+
+    def host_index(self):
+        number_of_kv_nodes = self.kv_hosts.__len__()
+        for i in range(number_of_kv_nodes):
+            yield i
 
     @single_host
     def detect_openssl(self, pkg):

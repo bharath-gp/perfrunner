@@ -256,6 +256,7 @@ class RemoteLinuxHelper(object):
         if throughput != float('inf'):
             cmdstr += " -t {}".format(throughput)
         cmdstr += " cb://Administrator:password@{}:8091/bucket-1".format(self.hosts[0])
+        logger.info(cmdstr)
         run(cmdstr)
 
     def host_index(self):

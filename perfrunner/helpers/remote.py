@@ -220,10 +220,14 @@ class RemoteLinuxHelper(object):
                 if creates != 0:
                     existing_item = operation * self.host_index + existing_items
         self.host_index += 1
+        logger.info(self.host_index)
+        rest_credentials = self.cluster_spec.rest_credentials
         cmdstr = "spring -c {} -r {} -u {} -d {} -e {} " \
-                 "-s {} -i {} -w {} -W {} -n {}".format(creates, reads, updates, deletes, expires, size,
-                                                        existing_item, items_in_working_set,
-                                                        operations_to_hit_working_set, workers)
+                 "-s {} -i {} -w {} -W {} -n {} " \
+                 "cb://Administrator:password@{}:8091/bucket-1".format(creates, reads, updates, deletes, expires, size,
+                                                                       existing_item, items_in_working_set,
+                                                                       operations_to_hit_working_set, workers,
+                                                                       self.hosts[0])
         if operation != 0:
             cmdstr += " -o {}".format(operation)
         if throughput != float('inf'):

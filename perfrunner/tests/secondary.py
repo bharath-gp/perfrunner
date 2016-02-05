@@ -231,7 +231,7 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
             throughput = access_settings.throughput
             size = access_settings.size
             existing_items = load_settings.items
-            items_in_working_set = access_settings.working_set
+            items_in_working_set = int(access_settings.working_set)
             operations_to_hit_working_set = access_settings.working_set_access
             workers = access_settings.spring_workers
             self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,

@@ -243,17 +243,19 @@ class RemoteLinuxHelper(object):
                 operation = operations - (int(operations / (number_of_kv_nodes * 100)) * 100 * (number_of_kv_nodes - 1))
                 if creates != 0:
                     existing_item = operation * host + existing_items
+                f = open("/tmp/current_host.txt", "w")
+                f.write("0")
+                f.close()
         time.sleep(number_of_kv_nodes * 2 - sleep_time)
         cmdstr = "spring -c {} -r {} -u {} -d {} -e {} " \
-                 "-s {} -i {} -w {} -W {} -n {} " \
-                 "cb://Administrator:password@{}:8091/bucket-1".format(creates, reads, updates, deletes, expires, size,
-                                                                       existing_item, items_in_working_set,
-                                                                       operations_to_hit_working_set, workers,
-                                                                       self.hosts[0])
+                 "-s {} -i {} -w {} -W {} -n {}".format(creates, reads, updates, deletes, expires, size,
+                                                        existing_item, items_in_working_set,
+                                                        operations_to_hit_working_set, workers, self.hosts[0])
         if operation != 0:
             cmdstr += " -o {}".format(operation)
         if throughput != float('inf'):
             cmdstr += " -t {}".format(throughput)
+        cmdstr += " cb://Administrator:password@{}:8091/bucket-1".format(self.hosts[0])
         run(cmdstr)
 
     def host_index(self):

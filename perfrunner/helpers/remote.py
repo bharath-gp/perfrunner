@@ -47,6 +47,21 @@ def all_gateloads(task, *args, **kargs):
     return execute(parallel(task), *args, hosts=self.gateloads, **kargs)
 
 
+@decorator
+def all_kv_nodes(task, *args, **kargs):
+    self = args[0]
+    self.host_index = 0
+    return execute(parallel(task), *args, hosts=self.kv_hosts, **kargs)
+
+
+@decorator
+def kv_node(task, *args, **kargs):
+    self = args[0]
+    host = self.cluster_spec.yield_kv_servers().next()
+    with settings(host_string=host):
+        return task(*args, **kargs)
+
+
 class RemoteHelper(object):
 
     def __new__(cls, cluster_spec, test_config, verbose=False):
@@ -87,6 +102,7 @@ class RemoteLinuxHelper(object):
     def __init__(self, cluster_spec, test_config, os):
         self.os = os
         self.hosts = tuple(cluster_spec.yield_hostnames())
+        self.kv_hosts = tuple(cluster_spec.yield_kv_servers())
         self.cluster_spec = cluster_spec
         self.test_config = test_config
         self.env = {}
@@ -185,6 +201,34 @@ class RemoteLinuxHelper(object):
         status = run(cmdstr, shell_escape=False, pty=False)
         if status:
             logger.info('cbindex status {}'.format(status))
+
+    @all_kv_nodes
+    def run_spring_on_kv(self, creates=0, reads=0, updates=0, deletes=0, expires=0, operations=float('inf'),
+                         throughput=float('inf'), size=2048, existing_items=0, items_in_working_set=100,
+                         operations_to_hit_working_set=100, workers=1):
+        logger.info("running spring on kv nodes")
+        number_of_kv_nodes = self.kv_hosts.__len__()
+        existing_item = operation = 0
+        if self.host_index != number_of_kv_nodes - 1:
+            if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
+                operation = int(operations / (number_of_kv_nodes * 100)) * 100
+                if creates != 0:
+                    existing_item = operation * self.host_index + existing_items
+        else:
+            if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
+                operation = operations - (int(operations / (number_of_kv_nodes * 100)) * 100 * (number_of_kv_nodes - 1))
+                if creates != 0:
+                    existing_item = operation * self.host_index + existing_items
+        self.host_index += 1
+        cmdstr = "spring -c {} -r {} -u {} -d {} -e {} " \
+                 "-s {} -i {} -w {} -W {} -n {}".format(creates, reads, updates, deletes, expires, size,
+                                                        existing_item, items_in_working_set,
+                                                        operations_to_hit_working_set, workers)
+        if operation != 0:
+            cmdstr += " -o {}".format(operation)
+        if throughput != float('inf'):
+            cmdstr += " -t {}".format(throughput)
+        run(cmdstr)
 
     @single_host
     def detect_openssl(self, pkg):

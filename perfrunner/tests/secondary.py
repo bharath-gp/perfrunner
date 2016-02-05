@@ -205,6 +205,7 @@ class TargetIteratorFor2i(object):
                     prefix = target_hash(master.split(':')[0])
                 yield TargetSettings(master, bucket, password, prefix)
 
+
 class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
 
     """
@@ -219,18 +220,51 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
     @with_stats
     def build_incrindex(self):
         access_settings = self.test_config.access_settings
-        self.worker_manager.run_workload(access_settings, self.target_iterator)
-        self.worker_manager.wait_for_workers()
         load_settings = self.test_config.load_settings
-        access_settings = self.test_config.access_settings
-        numitems = load_settings.items + access_settings.items
-
+        if self.secondaryDB == 'memdb':
+            creates = access_settings.creates
+            reads = access_settings.reads
+            updates = access_settings.updates
+            deletes = access_settings.deletes
+            expires = access_settings.expiration
+            operations = access_settings.items
+            throughput = access_settings.throughput
+            size = access_settings.size
+            existing_items = load_settings.items
+            items_in_working_set = access_settings.working_set
+            operations_to_hit_working_set = access_settings.working_set_access
+            workers = access_settings.workers
+            self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
+                                         expires=expires, operations=operations, throughput=throughput, size=size,
+                                         existing_items=existing_items, items_in_working_set=items_in_working_set,
+                                         operations_to_hit_working_set=operations_to_hit_working_set, workers=workers)
+        else:
+            self.worker_manager.run_workload(access_settings, self.target_iterator)
+            self.worker_manager.wait_for_workers()
+        numitems = load_settings.items
         self.rest.wait_for_secindex_incr_build(self.index_nodes, self.bucket,
                                                self.active_indexes, numitems)
 
     def run(self):
-        #target_iterator = TargetIteratorFor2i(self.cluster_spec, self.test_config)
-        self.load()
+        if self.secondaryDB == 'memdb':
+            load_settings = self.test_config.load_settings
+            creates = load_settings.creates
+            reads = load_settings.reads
+            updates = load_settings.updates
+            deletes = load_settings.deletes
+            expires = load_settings.expiration
+            operations = load_settings.items
+            throughput = load_settings.throughput
+            size = load_settings.size
+            items_in_working_set = int(load_settings.working_set)
+            operations_to_hit_working_set = load_settings.working_set_access
+            workers = load_settings.workers
+            self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
+                                         expires=expires, operations=operations, throughput=throughput, size=size,
+                                         items_in_working_set=items_in_working_set,
+                                         operations_to_hit_working_set=operations_to_hit_working_set, workers=workers)
+        else:
+            self.load()
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()

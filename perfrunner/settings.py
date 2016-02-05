@@ -85,6 +85,16 @@ class ClusterSpec(Config):
                     has_service.append(server.split(',')[0])
             yield name, has_service
 
+    @safe
+    def yield_kv_servers(self):
+        for name, servers in self.config.items('clusters'):
+            for server in servers.split():
+                if ',' in server:
+                    continue
+                else:
+                    yield server.split(':')[0]
+
+
     @property
     @safe
     def roles(self):

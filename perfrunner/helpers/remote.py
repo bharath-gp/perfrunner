@@ -95,13 +95,18 @@ current_host_index = -1
 class CurrentHostMutex:
 
     def __init__(self):
-        return
+        f = open("/tmp/current_host.txt", 'w')
+        f.write("0")
+        f.close()
 
     @staticmethod
     def next_host_index():
-        global current_host_index
-        current_host_index += 1
-        return current_host_index
+        f = open("/tmp/current_host.txt", 'r')
+        next_host = f.readline()
+        f.close()
+        f = open("/tmp/current_host.txt", 'w')
+        f.write((int(next_host) + 1).__str__())
+        return int(next_host)
 
 
 class RemoteLinuxHelper(object):
@@ -117,6 +122,7 @@ class RemoteLinuxHelper(object):
         self.os = os
         self.hosts = tuple(cluster_spec.yield_hostnames())
         self.kv_hosts = tuple(cluster_spec.yield_kv_servers())
+        self.current_host = CurrentHostMutex()
         self.cluster_spec = cluster_spec
         self.test_config = test_config
         self.env = {}
@@ -225,7 +231,7 @@ class RemoteLinuxHelper(object):
         existing_item = operation = 0
         sleep_time = uniform(1, number_of_kv_nodes)
         time.sleep(sleep_time)
-        host = CurrentHostMutex.next_host_index()
+        host = self.current_host.next_host_index()
         logger.info("current_host_index {}".format(host))
         if host != number_of_kv_nodes - 1:
             if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):

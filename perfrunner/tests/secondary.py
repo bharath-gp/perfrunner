@@ -234,6 +234,7 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
             items_in_working_set = int(access_settings.working_set)
             operations_to_hit_working_set = access_settings.working_set_access
             workers = access_settings.spring_workers
+            logger.info("existing Items = {}".format(existing_items))
             self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
                                          expires=expires, operations=operations, throughput=throughput, size=size,
                                          existing_items=existing_items, items_in_working_set=items_in_working_set,

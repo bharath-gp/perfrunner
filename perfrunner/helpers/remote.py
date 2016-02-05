@@ -238,11 +238,15 @@ class RemoteLinuxHelper(object):
                 operation = int(operations / (number_of_kv_nodes * 100)) * 100
                 if creates != 0:
                     existing_item = operation * host + existing_items
+                else:
+                    existing_item = existing_items
         else:
             if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
                 operation = operations - (int(operations / (number_of_kv_nodes * 100)) * 100 * (number_of_kv_nodes - 1))
                 if creates != 0:
                     existing_item = operation * host + existing_items
+                else:
+                    existing_item = existing_items
                 f = open("/tmp/current_host.txt", "w")
                 f.write("0")
                 f.close()

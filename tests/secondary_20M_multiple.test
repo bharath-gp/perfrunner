@@ -24,7 +24,7 @@ name = myindex1,myindex2,myindex3,myindex4,myindex5
 field = alt_email,city,name,coins,achievements
 
 [access]
-creates = 100
+updates = 100
 ops = 20000000
 items = 20000000
 workers = 20

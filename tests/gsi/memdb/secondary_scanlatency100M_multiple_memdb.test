@@ -14,14 +14,18 @@ num_buckets = 1
 db_percentage = 100
 view_percentage = 100
 
+[bucket]
+replica_number=0
+replica_index=0
+
 [load]
 items = 100000000
 size = 2048
-workers = 100
+spring_workers = 100
 
 [secondary]
 name = myindex1,myindex2,myindex3,myindex4,myindex5
-field = alt_email,city,name,coins,achievements
+field = email,city,name,coins,achievements
 db = memdb
 
 [access]
@@ -32,4 +36,4 @@ deletes = 1
 throughput = 100000
 items = 100000000
 ops = 100000000
-workers = 100
+spring_workers = 100

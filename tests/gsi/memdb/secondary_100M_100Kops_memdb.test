@@ -14,14 +14,18 @@ num_buckets = 1
 db_percentage = 100
 view_percentage = 100
 
+[bucket]
+replica_number=0
+replica_index=0
+
 [load]
 items = 100000000
 size = 2048
-workers = 100
+spring_workers = 100
 
 [secondary]
 name = myindex
-field = alt_email
+field = email
 db = memdb
 
 [access]
@@ -29,4 +33,4 @@ updates = 100
 ops = 100000000
 items = 100000000
 throughput = 100000
-workers = 100
+spring_workers = 100

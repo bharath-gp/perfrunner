@@ -24,7 +24,7 @@ name = myindex
 field = alt_email
 
 [access]
-creates = 100
+updates = 100
 ops = 150000000
 items = 150000000
 workers = 20

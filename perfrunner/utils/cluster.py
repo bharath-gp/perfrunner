@@ -222,6 +222,12 @@ class ClusterManager(object):
         if self.test_config.cluster.run_cbq:
             self.remote.start_cbq()
 
+    def change_dcp_io_threads(self):
+        if self.test_config.secondaryindex_settings.db == 'memdb':
+            self.remote.set_dcp_io_threads()
+            time.sleep(30)
+            self.remote.restart()
+
 
 def get_options():
     usage = '%prog -c cluster -t test_config'
@@ -289,6 +295,7 @@ def main():
     cm.change_watermarks()
     if cm.remote:
         cm.set_index_settings()
+        cm.change_dcp_io_threads()
         time.sleep(60)
         cm.set_query_settings()
         cm.tweak_memory()

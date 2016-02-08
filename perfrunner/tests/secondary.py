@@ -163,6 +163,27 @@ class SecondaryIndexTest(PerfTest):
                                                               self.active_indexes, rest_username, rest_password)
         return time_elapsed
 
+    def run_load_for_2i(self):
+        if self.secondaryDB == 'memdb':
+            load_settings = self.test_config.load_settings
+            creates = load_settings.creates
+            reads = load_settings.reads
+            updates = load_settings.updates
+            deletes = load_settings.deletes
+            expires = load_settings.expiration
+            operations = load_settings.items
+            throughput = load_settings.throughput
+            size = load_settings.size
+            items_in_working_set = int(load_settings.working_set)
+            operations_to_hit_working_set = load_settings.working_set_access
+            workers = load_settings.spring_workers
+            self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
+                                         expires=expires, operations=operations, throughput=throughput, size=size,
+                                         items_in_working_set=items_in_working_set,
+                                         operations_to_hit_working_set=operations_to_hit_working_set, workers=workers)
+        else:
+            self.load()
+
 
 class InitialSecondaryIndexTest(SecondaryIndexTest):
 
@@ -189,6 +210,7 @@ class InitialSecondaryIndexTest(SecondaryIndexTest):
             *self.metric_helper.get_indexing_meta(value=time_elapsed,
                                                   index_type='Initial')
         )
+
 
 class TargetIteratorFor2i(object):
     def __init__(self, cluster_spec, test_config, prefix=None):
@@ -247,25 +269,7 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
                                                self.active_indexes, numitems)
 
     def run(self):
-        if self.secondaryDB == 'memdb':
-            load_settings = self.test_config.load_settings
-            creates = load_settings.creates
-            reads = load_settings.reads
-            updates = load_settings.updates
-            deletes = load_settings.deletes
-            expires = load_settings.expiration
-            operations = load_settings.items
-            throughput = load_settings.throughput
-            size = load_settings.size
-            items_in_working_set = int(load_settings.working_set)
-            operations_to_hit_working_set = load_settings.working_set_access
-            workers = load_settings.spring_workers
-            self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
-                                         expires=expires, operations=operations, throughput=throughput, size=size,
-                                         items_in_working_set=items_in_working_set,
-                                         operations_to_hit_working_set=operations_to_hit_working_set, workers=workers)
-        else:
-            self.load()
+        self.run_load_for_2i()
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
@@ -302,7 +306,7 @@ class InitialandIncrementalSecondaryIndexRebalanceTest(InitialandIncrementalSeco
         self.rest.rebalance(master, known_nodes, ejected_nodes)
 
     def run(self):
-        self.load()
+        self.run_load_for_2i()
         self.wait_for_persistence()
         self.compact_bucket()
         initial_nodes = []
@@ -381,7 +385,7 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
         return scansps, rowps
 
     def run(self):
-        self.load()
+        self.run_load_for_2i()
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
@@ -418,7 +422,7 @@ class SecondaryIndexingThroughputRebalanceTest(SecondaryIndexingThroughputTest):
         self.rest.rebalance(master, known_nodes, ejected_nodes)
 
     def run(self):
-        self.load()
+        self.run_load_for_2i()
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
@@ -479,7 +483,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         else:
             logger.info('Existing 2i latency stats file removed')
 
-        self.load()
+        self.run_load_for_2i()
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
@@ -522,7 +526,7 @@ class SecondaryIndexingScanLatencyRebalanceTest(SecondaryIndexingScanLatencyTest
         else:
             logger.info('Existing 2i latency stats file removed')
 
-        self.load()
+        self.run_load_for_2i()
         self.wait_for_persistence()
         self.compact_bucket()
         initial_nodes = []
@@ -559,7 +563,7 @@ class SecondaryIndexingLatencyTest(SecondaryIndexTest):
         return status
 
     def run(self):
-        self.load()
+        self.run_load_for_2i()
         self.wait_for_persistence()
         self.compact_bucket()
         self.hot_load()

@@ -263,10 +263,14 @@ class RemoteLinuxHelper(object):
         logger.info(cmdstr)
         run(cmdstr)
 
-    def host_index(self):
-        number_of_kv_nodes = self.kv_hosts.__len__()
-        for i in range(number_of_kv_nodes):
-            yield i
+    @single_host
+    def set_dcp_io_threads(self):
+        cmdstr = "curl -u Administrator:password -XPOST -d 'ns_bucket:update_bucket_props(\"bucket-1\", " \
+                 "[{extra_config_string, \"max_num_auxio=16\"}])' http://{}:8091/diag/eval".format(self.hosts[0])
+        logger.info("Changing the DCP IO threads")
+        logger.info(cmdstr)
+        run(cmdstr)
+
 
     @single_host
     def detect_openssl(self, pkg):

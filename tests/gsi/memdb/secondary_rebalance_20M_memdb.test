@@ -1,7 +1,7 @@
 [test_case]
 test = perfrunner.tests.secondary.InitialandIncrementalSecondaryIndexRebalanceTest
-title = 1 bucket x 20M x 2KB,single 2i index, rebalance during initial/incr build, memdb
-summary = Secondary Indexing during rebalance test, 4 KV nodes, 1 2i node 1 bucket x 20M x 2KB, memdb
+title = 1 bucket x 20M x 2KB,single 2i index, 150K KV ops/sec, rebalance during initial/incr build, memdb
+summary = Secondary Indexing during rebalance test, 7 KV nodes, 1 2i node 1 bucket x 20M x 2KB, 150K KV ops/sec, memdb
 larger_is_better = false
 
 [cluster]

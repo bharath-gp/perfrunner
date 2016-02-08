@@ -1,7 +1,7 @@
 [test_case]
 test = perfrunner.tests.secondary.InitialandIncrementalSecondaryIndexTest
-title = 1 bucket x 100M x 2KB,100K ops,five 2i indexes, no mutations during initial build only
-summary = Secondary Indexing test, 4 KV nodes, 1 2i node 1 bucket x 100M x 2KB
+title = 1 bucket x 100M x 2KB,100K ops,five 2i indexes, 150K KV ops/sec, no mutations during initial build only
+summary = Secondary Indexing test, 7 KV nodes, 1 2i node 1 bucket x 100M x 2KB, 150K KV ops/sec, memdb
 larger_is_better = false
 
 [cluster]

@@ -264,7 +264,7 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
         else:
             self.worker_manager.run_workload(access_settings, self.target_iterator)
             self.worker_manager.wait_for_workers()
-        numitems = load_settings.items
+        numitems = load_settings.items + access_settings.items
         self.rest.wait_for_secindex_incr_build(self.index_nodes, self.bucket,
                                                self.active_indexes, numitems)
 

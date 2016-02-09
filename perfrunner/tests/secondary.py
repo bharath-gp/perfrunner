@@ -172,7 +172,8 @@ class SecondaryIndexTest(PerfTest):
             deletes = load_settings.deletes
             expires = load_settings.expiration
             operations = load_settings.items
-            throughput = int(load_settings.throughput)
+            throughput = int(load_settings.throughput) if load_settings.throughput != float('inf') \
+                else load_settings.throughput
             size = load_settings.size
             items_in_working_set = int(load_settings.working_set)
             operations_to_hit_working_set = load_settings.working_set_access
@@ -250,7 +251,8 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
             deletes = access_settings.deletes
             expires = access_settings.expiration
             operations = access_settings.items
-            throughput = int(access_settings.throughput)
+            throughput = int(load_settings.throughput) if load_settings.throughput != float('inf') \
+                else load_settings.throughput
             size = access_settings.size
             existing_items = load_settings.items
             items_in_working_set = int(access_settings.working_set)

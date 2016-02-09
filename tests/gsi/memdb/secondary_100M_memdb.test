@@ -1,7 +1,7 @@
 [test_case]
 test = perfrunner.tests.secondary.InitialandIncrementalSecondaryIndexTest
-title = 1 bucket x 100M x 2KB,50K ops,single 2i index, no mutations during initial build only, memdb
-summary = Secondary Indexing test, 4 KV nodes, 1 2i node 1 bucket x 100M x 2KB, memdb
+title = 1 bucket x 100M x 2KB, 150K KV ops/sec,single 2i index, no mutations during initial build only, memdb
+summary = Secondary Indexing test, 4 KV nodes, 1 2i node 1 bucket x 100M x 2KB, 150K KV ops/sec, memdb
 larger_is_better = false
 
 [cluster]
@@ -21,7 +21,7 @@ replica_index=0
 [load]
 items = 100000000
 size = 2048
-spring_workers = 50
+spring_workers = 100
 
 [secondary]
 name = myindex
@@ -32,4 +32,4 @@ db = memdb
 updates = 100
 ops = 100000000
 items = 100000000
-spring_workers = 50
+spring_workers = 100

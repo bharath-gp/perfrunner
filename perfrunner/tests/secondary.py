@@ -485,7 +485,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         else:
             logger.info('Existing 2i latency stats file removed')
 
-        self.run_load_for_2i()
+        self.load()
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()

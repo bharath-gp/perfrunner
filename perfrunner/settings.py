@@ -481,6 +481,7 @@ class PhaseSettings(object):
     DOC_PARTITIONS = 1
 
     ITEMS = 0
+    EXISTING_ITEMS = 0
     SIZE = 2048
     EXPIRATION = 0
     WORKING_SET = 100
@@ -499,6 +500,7 @@ class PhaseSettings(object):
     TIME = 3600 * 24
 
     ASYNC = False
+    PARALLEL_WORKLOAD = False
 
     ITERATIONS = 1
 
@@ -520,6 +522,7 @@ class PhaseSettings(object):
                                               self.DOC_PARTITIONS))
         self.size = int(options.get('size', self.SIZE))
         self.items = int(options.get('items', self.ITEMS))
+        self.existing_items = int(options.get('existing_items', self.EXISTING_ITEMS))
         self.expiration = int(options.get('expiration', self.EXPIRATION))
         self.working_set = float(options.get('working_set', self.WORKING_SET))
         self.working_set_access = int(options.get('working_set_access',
@@ -549,7 +552,7 @@ class PhaseSettings(object):
         self.time = int(options.get('time', self.TIME))
 
         self.async = bool(int(options.get('async', self.ASYNC)))
-
+        self.parallel_workload = bool(int(options.get('parallel_workload', self.PARALLEL_WORKLOAD)))
         self.iterations = int(options.get('iterations', self.ITERATIONS))
 
         self.filename = None

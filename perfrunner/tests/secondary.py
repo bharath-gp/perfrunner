@@ -185,6 +185,34 @@ class SecondaryIndexTest(PerfTest):
         else:
             self.load()
 
+    def run_access_for_2i(self, run_in_background=False):
+        if self.secondaryDB == 'memdb':
+            load_settings = self.test_config.load_settings
+            access_settings = self.test_config.access_settings
+            creates = access_settings.creates
+            reads = access_settings.reads
+            updates = access_settings.updates
+            deletes = access_settings.deletes
+            expires = access_settings.expiration
+            operations = access_settings.items
+            throughput = int(access_settings.throughput) if access_settings.throughput != float('inf') \
+                else access_settings.throughput
+            size = access_settings.size
+            existing_items = access_settings.existing_items
+            items_in_working_set = int(access_settings.working_set)
+            operations_to_hit_working_set = access_settings.working_set_access
+            workers = access_settings.spring_workers
+            self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
+                                         expires=expires, operations=operations, throughput=throughput, size=size,
+                                         existing_items=existing_items, items_in_working_set=items_in_working_set,
+                                         operations_to_hit_working_set=operations_to_hit_working_set, workers=workers,
+                                         silent=run_in_background)
+        else:
+            if run_in_background:
+                self.access_bg()
+            else:
+                self.access()
+
 
 class InitialSecondaryIndexTest(SecondaryIndexTest):
 
@@ -251,8 +279,8 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
             deletes = access_settings.deletes
             expires = access_settings.expiration
             operations = access_settings.items
-            throughput = int(load_settings.throughput) if load_settings.throughput != float('inf') \
-                else load_settings.throughput
+            throughput = int(access_settings.throughput) if access_settings.throughput != float('inf') \
+                else access_settings.throughput
             size = access_settings.size
             existing_items = load_settings.items
             items_in_working_set = int(access_settings.working_set)
@@ -489,8 +517,9 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
-        self.access_bg()
+        self.run_access_for_2i(run_in_background=True)
         self.apply_scanworkload()
+        self.remote.check_spring_running()
         logger.info(self.metric_helper.calc_secondaryscan_latency(percentile=80))
         if self.test_config.stats_settings.enabled:
             self.reporter.post_to_sf(

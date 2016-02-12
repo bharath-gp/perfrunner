@@ -225,7 +225,7 @@ class RemoteLinuxHelper(object):
     @all_kv_nodes
     def run_spring_on_kv(self, creates=0, reads=0, updates=0, deletes=0, expires=0, operations=float('inf'),
                          throughput=float('inf'), size=2048, existing_items=0, items_in_working_set=100,
-                         operations_to_hit_working_set=100, workers=1):
+                         operations_to_hit_working_set=100, workers=1, silent=False):
         logger.info("running spring on kv nodes")
         number_of_kv_nodes = self.kv_hosts.__len__()
         existing_item = operation = 0
@@ -260,8 +260,22 @@ class RemoteLinuxHelper(object):
         if throughput != float('inf'):
             cmdstr += " -t {}".format(throughput)
         cmdstr += " cb://Administrator:password@{}:8091/bucket-1".format(self.hosts[0])
+        if silent:
+            cmdstr += " 2>/dev/null >/dev/null &"
         logger.info(cmdstr)
         run(cmdstr)
+
+    @all_kv_nodes
+    def check_spring_running(self):
+        cmdstr = "ps aux | grep -ie spring | awk 'print $11}'"
+        result = run(cmdstr)
+        logger.info(result)
+        logger.info(result.stdout)
+
+    @all_kv_nodes
+    def kill_spring_processes(self):
+        cmdstr = "ps aux | grep -ie spring | awk '{print $2}' | xargs kill -9"
+        result = run(cmdstr)
 
     @single_host
     def set_dcp_io_threads(self):

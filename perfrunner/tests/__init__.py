@@ -15,7 +15,7 @@ from perfrunner.helpers.monitor import Monitor
 from perfrunner.helpers.remote import RemoteHelper
 from perfrunner.helpers.reporter import Reporter
 from perfrunner.helpers.rest import RestHelper, SyncGatewayRequestHelper
-from perfrunner.helpers.worker import WorkerManager, run_spring_via_celery
+from perfrunner.helpers.worker import WorkerManager
 from perfrunner.settings import TargetSettings
 
 

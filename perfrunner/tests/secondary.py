@@ -518,7 +518,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
-        self.run_access_for_2i(run_in_background=True)
+        self.access_bg()
         self.apply_scanworkload()
         self.remote.check_spring_running()
         logger.info(self.metric_helper.calc_secondaryscan_latency(percentile=80))

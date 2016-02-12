@@ -133,10 +133,7 @@ class PerfTest(object):
         if self.test_config.spatial_settings:
             load_settings.spatial = self.test_config.spatial_settings
         log_phase('load phase', load_settings)
-        if load_settings.parallel_workload:
-            self.worker_manager.run_workload(load_settings, target_iterator, run_workload=run_spring_via_celery)
-        else:
-            self.worker_manager.run_workload(load_settings, target_iterator)
+        self.worker_manager.run_workload(load_settings, target_iterator)
         self.worker_manager.wait_for_workers()
 
     def hot_load(self):
@@ -156,10 +153,7 @@ class PerfTest(object):
             access_settings.spatial = self.test_config.spatial_settings
 
         log_phase('access phase', access_settings)
-        if access_settings.parallel_workload:
-            self.worker_manager.run_workload(access_settings, self.target_iterator, run_workload=run_spring_via_celery)
-        else:
-            self.worker_manager.run_workload(access_settings, self.target_iterator)
+        self.worker_manager.run_workload(access_settings, self.target_iterator)
         self.worker_manager.wait_for_workers()
 
     def access_bg(self, access_settings=None):
@@ -171,12 +165,8 @@ class PerfTest(object):
         log_phase('access phase in background', access_settings)
         access_settings.index_type = self.test_config.index_settings.index_type
         access_settings.ddocs = getattr(self, 'ddocs', None)
-        if access_settings.parallel_workload:
-            self.worker_manager.run_workload(access_settings, self.target_iterator,
-                                             timer=access_settings.time, run_workload=run_spring_via_celery)
-        else:
-            self.worker_manager.run_workload(access_settings, self.target_iterator,
-                                             timer=access_settings.time)
+        self.worker_manager.run_workload(access_settings, self.target_iterator,
+                                         timer=access_settings.time)
 
     def timer(self):
         access_settings = self.test_config.access_settings

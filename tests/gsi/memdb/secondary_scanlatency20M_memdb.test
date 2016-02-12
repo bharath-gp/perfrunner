@@ -1,7 +1,7 @@
 [test_case]
 test = perfrunner.tests.secondary.SecondaryIndexingScanLatencyTest
-title = Secondary index scan latency(ms), 1 bucket x 100M x 2KB, 150K KV ops/sec, single index, memdb
-summary = Secondary index 150K KV ops/sec scan latency(ms) test , 7 kv, 1 index node, 1 bucket x 100M x 2KB, single index, memdb
+title = Secondary index scan latency(ms), 1 bucket x 20M x 2KB, 150K KV ops/sec, single index, memdb
+summary = Secondary index 150K KV ops/sec scan latency(ms) test , 7 kv, 1 index node, 1 bucket x 200M x 2KB, single index, memdb
 larger_is_better = true
 
 [cluster]
@@ -21,7 +21,7 @@ replica_index=0
 [load]
 items = 20000000
 size = 2048
-workers = 20
+spring_workers = 100
 
 [secondary]
 name = myindex
@@ -33,7 +33,6 @@ creates = 1
 reads = 80
 updates = 18
 deletes = 1
-throughput = 10000
 items = 20000000
 ops = 20000000
-workers = 20
+spring_workers = 100

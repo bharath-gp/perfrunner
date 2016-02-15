@@ -518,7 +518,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
-        self.access_bg()
+        self.run_access_for_2i(run_in_background=True)
         self.apply_scanworkload()
         logger.info(self.metric_helper.calc_secondaryscan_latency(percentile=80))
         if self.test_config.stats_settings.enabled:

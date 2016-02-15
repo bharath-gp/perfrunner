@@ -236,14 +236,14 @@ class RemoteLinuxHelper(object):
         if host != number_of_kv_nodes - 1:
             if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
                 operation = int(operations / (number_of_kv_nodes * 100)) * 100
-                if creates != 0:
+                if creates == 100:
                     existing_item = operation * host + existing_items
                 else:
                     existing_item = existing_items
         else:
             if (creates != 0 or reads != 0 or updates != 0 or deletes != 0) and operations != float('inf'):
                 operation = operations - (int(operations / (number_of_kv_nodes * 100)) * 100 * (number_of_kv_nodes - 1))
-                if creates != 0:
+                if creates == 100:
                     existing_item = operation * host + existing_items
                 else:
                     existing_item = existing_items
@@ -267,7 +267,7 @@ class RemoteLinuxHelper(object):
 
     @all_kv_nodes
     def check_spring_running(self):
-        cmdstr = "ps aux | grep -ie spring | awk 'print $11}'"
+        cmdstr = r"ps aux | grep -ie spring | awk '{print $11}'"
         result = run(cmdstr)
         logger.info(result)
         logger.info(result.stdout)

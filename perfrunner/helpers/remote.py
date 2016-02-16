@@ -261,10 +261,10 @@ class RemoteLinuxHelper(object):
         if throughput != float('inf'):
             cmdstr += " -t {}".format(throughput)
         cmdstr += " cb://Administrator:password@{}:8091/bucket-1".format(self.hosts[0])
-        pty = False
+        pty = True
         if silent:
             cmdstr += " >/tmp/springlog.log 2>&1 &"
-            pty = True
+            pty = False
         logger.info(cmdstr)
         run(cmdstr, pty=pty)
 

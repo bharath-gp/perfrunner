@@ -1,5 +1,5 @@
 from perfrunner.helpers.remote import RemoteHelper
-
+import logger
 
 class Spring(object):
     def __init__(self, settings, cluster_spec, test_config):
@@ -21,6 +21,7 @@ class Spring(object):
         items_in_working_set = int(load_settings.working_set)
         operations_to_hit_working_set = load_settings.working_set_access
         workers = load_settings.spring_workers
+        logger.info("Inside Spring class to run workload gen via celery. {}".format(load_settings))
         self.remote.run_spring_on_kv(creates=creates, reads=reads, updates=updates, deletes=deletes,
                                      expires=expires, operations=operations, throughput=throughput, size=size,
                                      existing_items=existing_items, items_in_working_set=items_in_working_set,

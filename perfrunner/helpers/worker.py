@@ -13,6 +13,7 @@ from perfrunner import celerylocal, celeryremote
 from perfrunner.helpers.misc import log_phase
 from perfrunner.settings import REPO
 from perfrunner.workloads.pillowfight import Pillowfight
+from perfrunner.workloads.spring import Spring
 
 
 celery = Celery('workers')
@@ -46,6 +47,13 @@ def run_pillowfight_via_celery(settings, target, timer):
     pillow.run()
 
 
+@celery.task
+def run_spring_via_celery(settings, cluster_spec, test_config, target, timer):
+    spring = Spring(settings, cluster_spec, test_config)
+    logger.info("running spring.")
+    spring.run()
+
+
 class WorkerManager(object):
 
     def __new__(cls, *args, **kwargs):
@@ -61,6 +69,7 @@ class RemoteWorkerManager(object):
 
     def __init__(self, cluster_spec, test_config):
         self.cluster_spec = cluster_spec
+        self.test_config = test_config
         self.buckets = test_config.buckets or test_config.max_buckets
 
         self.reuse_worker = test_config.worker_settings.reuse_worker
@@ -119,6 +128,9 @@ class RemoteWorkerManager(object):
             log_phase('workload generator', settings)
             qname = '{}-{}'.format(target.node.split(':')[0], target.bucket)
             queue = Queue(name=qname)
+            if settings.parallel_workload:
+                logger.info("Parallel Workload. Using spring on celery to run workload.")
+                run_workload = run_spring_via_celery
             worker = run_workload.apply_async(
                 args=(settings, target, timer),
                 queue=queue.name, expires=timer,

@@ -22,6 +22,7 @@ replica_index=0
 items = 20000000
 size = 2048
 spring_workers = 100
+parallel_workload = 1
 
 [secondary]
 name = myindex
@@ -37,3 +38,4 @@ items = 20000000
 existing_items = 20000000
 ops = 20000000
 spring_workers = 100
+parallel_workload = 1

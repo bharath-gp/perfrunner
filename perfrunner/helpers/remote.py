@@ -264,7 +264,9 @@ class RemoteLinuxHelper(object):
         if silent:
             cmdstr += " 2>/dev/null >/dev/null &"
         logger.info(cmdstr)
-        run(cmdstr)
+        result = run(cmdstr)
+        logger.info(result)
+        logger.info(result.stdout)
 
     @all_kv_nodes
     def check_spring_running(self):

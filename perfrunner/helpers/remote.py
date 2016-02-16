@@ -262,7 +262,7 @@ class RemoteLinuxHelper(object):
             cmdstr += " -t {}".format(throughput)
         cmdstr += " cb://Administrator:password@{}:8091/bucket-1".format(self.hosts[0])
         if silent:
-            cmdstr += " >/tmp/springlog.log &"
+            cmdstr += " >/tmp/springlog.log & echo 1"
         logger.info(cmdstr)
         result = run(cmdstr)
         logger.info(result)

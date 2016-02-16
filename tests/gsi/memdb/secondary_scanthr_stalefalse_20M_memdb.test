@@ -35,4 +35,5 @@ reads = 80
 updates = 18
 deletes = 1
 items = 20000000
+existing_items = 20000000
 spring_workers = 100

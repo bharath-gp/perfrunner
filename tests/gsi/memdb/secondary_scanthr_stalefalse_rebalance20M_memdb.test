@@ -21,7 +21,7 @@ replica_index=0
 [load]
 items = 20000000
 size = 2048
-spring_workers = 20
+spring_workers = 100
 
 [secondary]
 name = myindex
@@ -34,6 +34,6 @@ creates = 1
 reads = 80
 updates = 18
 deletes = 1
-throughput = 18000
+existing_items = 20000000
 items = 20000000
-spring_workers = 20
+spring_workers = 100

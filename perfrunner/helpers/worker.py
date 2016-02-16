@@ -69,7 +69,6 @@ class RemoteWorkerManager(object):
 
     def __init__(self, cluster_spec, test_config):
         self.cluster_spec = cluster_spec
-        self.test_config = test_config
         self.buckets = test_config.buckets or test_config.max_buckets
 
         self.reuse_worker = test_config.worker_settings.reuse_worker
@@ -121,26 +120,17 @@ class RemoteWorkerManager(object):
                     '&>/tmp/worker_{1}.log &'.format(temp_dir, qname),
                     pty=False)
 
-    def run_workload(self, setting, target_iterator, timer=None,
-                     run_workload=task_run_workload, remote=None):
+    def run_workload(self, settings, target_iterator, timer=None,
+                     run_workload=task_run_workload):
         self.workers = []
         for target in target_iterator:
-            log_phase('workload generator', setting)
+            log_phase('workload generator', settings)
             qname = '{}-{}'.format(target.node.split(':')[0], target.bucket)
             queue = Queue(name=qname)
-            if setting.parallel_workload:
-                logger.info("Parallel Workload. Using spring on celery to run workload.")
-                run_workload = run_spring_via_celery
-                setting.remote = remote
-                worker = run_workload.apply_async(
-                    args=(setting, target, timer),
-                    queue=queue.name, expires=timer
-                )
-            else:
-                worker = run_workload.apply_async(
-                    args=(setting, target, timer),
-                    queue=queue.name, expires=timer,
-                )
+            worker = run_workload.apply_async(
+                args=(settings, target, timer),
+                queue=queue.name, expires=timer,
+            )
             self.workers.append(worker)
             sleep(self.RACE_DELAY)
 

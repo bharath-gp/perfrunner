@@ -133,7 +133,7 @@ class PerfTest(object):
         if self.test_config.spatial_settings:
             load_settings.spatial = self.test_config.spatial_settings
         log_phase('load phase', load_settings)
-        self.worker_manager.run_workload(load_settings, target_iterator, remote=remote)
+        self.worker_manager.run_workload(load_settings, target_iterator)
         self.worker_manager.wait_for_workers()
 
     def hot_load(self):

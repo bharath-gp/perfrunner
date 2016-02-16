@@ -261,12 +261,12 @@ class RemoteLinuxHelper(object):
         if throughput != float('inf'):
             cmdstr += " -t {}".format(throughput)
         cmdstr += " cb://Administrator:password@{}:8091/bucket-1".format(self.hosts[0])
+        pty = False
         if silent:
-            cmdstr += " >/tmp/springlog.log & echo 1"
+            cmdstr += " >/tmp/springlog.log 2>&1 &"
+            pty = True
         logger.info(cmdstr)
-        result = run(cmdstr)
-        logger.info(result)
-        logger.info(result.stdout)
+        run(cmdstr, pty=pty)
 
     @all_kv_nodes
     def check_spring_running(self):

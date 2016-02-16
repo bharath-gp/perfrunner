@@ -1,6 +1,6 @@
 [test_case]
-test = perfrunner.tests.cbbackup_restore.IncrementalBackupWorkloadRunningTest
-title = EE Incremental Backup time(sec): 1 bucket x 60M x 1KB
+test = perfrunner.tests.cbbackup_restore.IncrementalBackupWorkloadRunningFolderSizeTest
+title = EE Incremental Backup (Backup Size GB): 1 bucket x 60M x 1KB
 summary = Incremental backup all 4 nodes, 1 bucket x 60M x 1KB, throughput 15000
 larger_is_better = false
 monitor_clients = true
@@ -24,8 +24,8 @@ reads = 80
 updates = 18
 deletes = 1
 throughput = 15000
-items = 60000000
+items = 6000000
 workers = 10
 working_set = 10
 working_set_access = 98
-time = 18000
+time = 1200

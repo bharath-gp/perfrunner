@@ -1,10 +1,7 @@
 import time
-import urllib2
-import base64
 import json
 import subprocess
 import numpy as np
-import pdb
 
 from logger import logger
 

@@ -116,7 +116,8 @@ class RemoteLinuxHelper(object):
     CB_DIR = '/opt/couchbase'
     MONGO_DIR = '/opt/mongodb'
 
-    PROCESSES = ('beam.smp', 'memcached', 'epmd', 'cbq-engine', 'mongod')
+    PROCESSES = ('beam.smp', 'memcached', 'epmd', 'cbq-engine', 'mongod', 'indexer',
+                 'cbft', 'goport', 'goxdcr', 'couch_view_index_updater', 'moxi')
 
     def __init__(self, cluster_spec, test_config, os):
         self.os = os
@@ -427,8 +428,10 @@ class RemoteLinuxHelper(object):
                 return iface
 
     def detect_ip(self, _if):
-        ifconfing = run('ifconfig {} | grep "inet addr"'.format(_if))
-        return ifconfing.split()[1].split(':')[1]
+        ifconfig = run('ifconfig {} | grep "inet addr"'.format(_if), warn_only=True)
+        if not ifconfig:
+            ifconfig = run('ifconfig | grep "inet addr"| grep Bcast')
+        return ifconfig.split()[1].split(':')[1]
 
     @all_hosts
     def disable_wan(self):
@@ -504,10 +507,11 @@ class RemoteLinuxHelper(object):
             postfix = '-m %s' % mode
         if not mode or mode in ['full']:
             run('rm -rf %s' % backup_path)
+        start = time.time()
         if wrapper:
             for master in self.cluster_spec.yield_masters():
                 cmd = 'cd /opt/couchbase/bin && ./cbbackupwrapper' \
-                      ' http://%s:8091 %s -u %s -p %s %s' \
+                      ' http://%s:8091 %s -u %s -p %s -P 16 %s' \
                       % (master.split(':')[0], backup_path,
                          self.cluster_spec.rest_credentials[0],
                          self.cluster_spec.rest_credentials[1], postfix)
@@ -517,16 +521,17 @@ class RemoteLinuxHelper(object):
             for master in self.cluster_spec.yield_masters():
                 if not mode:
                     run('/opt/couchbase/bin/backup create --dir %s --name default' % backup_path)
+                # EE backup does not support modes, ignore 'full, diff, accu'
                 cmd = '/opt/couchbase/bin/backup cluster --dir %s --name default ' \
-                    '--host http://%s:8091 --username %s --password %s' \
+                    '--host http://%s:8091 --username %s --password %s --threads 16' \
                     % (backup_path, master.split(':')[0],
                         self.cluster_spec.rest_credentials[0],
                         self.cluster_spec.rest_credentials[1])
                 logger.info(cmd)
                 run(cmd)
-
-        return round(float(run('du -sh --block-size=1M %s' % backup_path).
-                           split('	')[0]) / 1024, 1)  # in Gb
+        delta_time = int(time.time() - start)
+        return (round(float(run('du -sh --block-size=1M %s' % backup_path).
+                split('	')[0]) / 1024, 1), delta_time)  # in Gb / sec
 
     @all_clients
     def cbrestore(self, wrapper=False):
@@ -537,22 +542,21 @@ class RemoteLinuxHelper(object):
                 cmd = 'cd /opt/couchbase/bin && ./cbrestorewrapper %s ' \
                     'http://%s:8091 -u Administrator -p password' \
                     % (restore_path, master.split(':')[0])
-                logger.info(cmd)
                 run(cmd)
         else:
             for master in self.cluster_spec.yield_masters():
-                dates = run('ls %s/default/' % restore_path).split()
-                for i in range(len(dates) - 1):
+                dates = run('ls %s/default/ | grep 20' % restore_path).split()
+                for i in range(len(dates)):
                     print i
                     start_date = end_date = dates[i]
-                    if i > 0:
-                        start_date = dates[i-1]
+                    if i < len(dates) - 1:
+                        end_date = dates[i + 1]
                     cmd = '/opt/couchbase/bin/backup restore --dir %s --name default ' \
-                        '--host http://%s:8091 --username %s --password %s --start %s --end %s' \
-                        % (restore_path, master.split(':')[0],
-                            self.cluster_spec.rest_credentials[0],
-                            self.cluster_spec.rest_credentials[1], start_date, end_date)
-                    logger.info(cmd)
+                        '--host http://%s:8091 --username %s --password %s --start %s --end %s ' \
+                        '--threads 16' % (restore_path, master.split(':')[0],
+                                          self.cluster_spec.rest_credentials[0],
+                                          self.cluster_spec.rest_credentials[1],
+                                          start_date, end_date)
                     run(cmd)
 
     @seriesly_host

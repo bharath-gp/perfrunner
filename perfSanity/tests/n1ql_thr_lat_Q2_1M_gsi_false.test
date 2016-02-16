@@ -1,0 +1,46 @@
+[test_case]
+test = perfrunner.tests.n1ql.N1QLThroughputLatencyTest
+title = N1QL Q2 1Bux2Mx1K, Singleton Unique Lookup, 14.4KGops, 3.6KSops, GSI, stale=false
+summary = Singleton Unique Lookup, 14.4KGops, 3.6KSops
+larger_is_better = false
+
+[cluster]
+mem_quota = 8048
+index_mem_quota = 1000
+initial_nodes = 3
+num_buckets = 1
+
+[stats]
+seriesly_host = 10.5.3.40
+
+[bucket]
+replica_number = 1
+password =
+eviction_policy = valueOnly
+
+[compaction]
+db_percentage = 100
+view_percentage = 100
+
+[n1ql]
+indexes =
+    by_email::CREATE INDEX {name} ON `{bucket}` (email) using gsi;
+
+[access]
+creates = 0
+reads = 100
+updates = 0
+deletes = 0
+throughput = 18000
+items = 1000000
+workers = 24
+time = 600
+n1ql_queries = singleton-unique-lookup
+n1ql_throughput = 9000
+n1ql_workers = 72
+
+[n1ql-singleton-unique-lookup]
+prepared = singleton_unique_lookup
+statement = SELECT * FROM `bucket-1` WHERE email = $1;
+scan_consistency = request_plus
+args = ["{email}"]

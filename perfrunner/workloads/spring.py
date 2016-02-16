@@ -2,10 +2,10 @@ from perfrunner.helpers.remote import RemoteHelper
 import logger
 
 class Spring(object):
-    def __init__(self, settings, cluster_spec, test_config):
+    def __init__(self, settings):
         logger.info("Initializing spring class")
         self.settings = settings
-        self.remote = RemoteHelper(cluster_spec, test_config)
+        self.remote = settings.remote
 
     def run(self):
         load_settings = self.settings

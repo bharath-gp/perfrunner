@@ -125,7 +125,7 @@ class PerfTest(object):
                 self.monitor.monitor_tap_queues(master, bucket)
                 self.monitor.monitor_upr_queues(master, bucket)
 
-    def load(self, load_settings=None, target_iterator=None):
+    def load(self, load_settings=None, target_iterator=None, remote=None):
         if load_settings is None:
             load_settings = self.test_config.load_settings
         if target_iterator is None:
@@ -133,7 +133,7 @@ class PerfTest(object):
         if self.test_config.spatial_settings:
             load_settings.spatial = self.test_config.spatial_settings
         log_phase('load phase', load_settings)
-        self.worker_manager.run_workload(load_settings, target_iterator)
+        self.worker_manager.run_workload(load_settings, target_iterator, remote=remote)
         self.worker_manager.wait_for_workers()
 
     def hot_load(self):

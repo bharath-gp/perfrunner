@@ -48,9 +48,9 @@ def run_pillowfight_via_celery(settings, target, timer):
 
 
 @celery.task
-def run_spring_via_celery(setting, cluster_spec, test_config, target, timer):
+def run_spring_via_celery(setting, target, timer):
     logger.info("running spring.")
-    spring = Spring(setting, cluster_spec, test_config)
+    spring = Spring(setting)
     spring.run()
 
 
@@ -122,7 +122,7 @@ class RemoteWorkerManager(object):
                     pty=False)
 
     def run_workload(self, setting, target_iterator, timer=None,
-                     run_workload=task_run_workload):
+                     run_workload=task_run_workload, remote=None):
         self.workers = []
         for target in target_iterator:
             log_phase('workload generator', setting)
@@ -131,9 +131,9 @@ class RemoteWorkerManager(object):
             if setting.parallel_workload:
                 logger.info("Parallel Workload. Using spring on celery to run workload.")
                 run_workload = run_spring_via_celery
+                setting['remote'] = remote
                 worker = run_workload.apply_async(
-                    args=(setting, self.cluster_spec,
-                          self.test_config, target, timer),
+                    args=(setting, target, timer),
                     queue=queue.name, expires=timer
                 )
             else:

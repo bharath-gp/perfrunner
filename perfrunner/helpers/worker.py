@@ -131,7 +131,7 @@ class RemoteWorkerManager(object):
             if setting.parallel_workload:
                 logger.info("Parallel Workload. Using spring on celery to run workload.")
                 run_workload = run_spring_via_celery
-                setting['remote'] = remote
+                setting.remote = remote
                 worker = run_workload.apply_async(
                     args=(setting, target, timer),
                     queue=queue.name, expires=timer

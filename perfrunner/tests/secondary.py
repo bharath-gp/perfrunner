@@ -453,7 +453,7 @@ class SecondaryIndexingThroughputRebalanceTest(SecondaryIndexingThroughputTest):
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
-        self.access_bg()
+        self.run_access_for_2i(run_in_background=True)
         initial_nodes = []
         nodes_after = [0]
         initial_nodes = self.test_config.cluster.initial_nodes
@@ -562,7 +562,7 @@ class SecondaryIndexingScanLatencyRebalanceTest(SecondaryIndexingScanLatencyTest
         initial_nodes = self.test_config.cluster.initial_nodes
         nodes_after[0] = initial_nodes[0] + 1
         from_ts, to_ts = self.build_secondaryindex()
-        self.access_bg()
+        self.run_access_for_2i(run_in_background=True)
         self.rebalance(initial_nodes[0], nodes_after[0])
         self.apply_scanworkload()
         if self.test_config.stats_settings.enabled:

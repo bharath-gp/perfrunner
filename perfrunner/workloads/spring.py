@@ -3,6 +3,7 @@ import logger
 
 class Spring(object):
     def __init__(self, settings, cluster_spec, test_config):
+        logger.info("Initializing spring class")
         self.settings = settings
         self.remote = RemoteHelper(cluster_spec, test_config)
 

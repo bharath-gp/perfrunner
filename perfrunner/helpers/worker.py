@@ -49,8 +49,8 @@ def run_pillowfight_via_celery(settings, target, timer):
 
 @celery.task
 def run_spring_via_celery(settings, cluster_spec, test_config, target, timer):
-    spring = Spring(settings, cluster_spec, test_config)
     logger.info("running spring.")
+    spring = Spring(settings, cluster_spec, test_config)
     spring.run()
 
 

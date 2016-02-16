@@ -131,10 +131,16 @@ class RemoteWorkerManager(object):
             if settings.parallel_workload:
                 logger.info("Parallel Workload. Using spring on celery to run workload.")
                 run_workload = run_spring_via_celery
-            worker = run_workload.apply_async(
-                args=(settings, target, timer),
-                queue=queue.name, expires=timer,
-            )
+                worker = run_workload.apply_async(
+                    args=(settings, self.cluster_spec,
+                          self.test_config, target, timer),
+                    queue=queue.name, expires=timer
+                )
+            else:
+                worker = run_workload.apply_async(
+                    args=(settings, target, timer),
+                    queue=queue.name, expires=timer,
+                )
             self.workers.append(worker)
             sleep(self.RACE_DELAY)
 

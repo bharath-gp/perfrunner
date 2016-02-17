@@ -380,14 +380,27 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
 
         if self.test_config.secondaryindex_settings.stale == 'false':
             if numindexes == 1:
-                self.configfile = 'scripts/config_scanthr_sessionconsistent.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanthr_sessionconsistent_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanthr_sessionconsistent.json'
             elif numindexes == 5:
-                self.configfile = 'scripts/config_scanthr_sessionconsistent_multiple.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanthr_sessionconsistent_multiple_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanthr_sessionconsistent_multiple.json'
         else:
+
             if numindexes == 1:
-                self.configfile = 'scripts/config_scanthr.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanthr_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanthr.json'
             elif numindexes == 5:
-                self.configfile = 'scripts/config_scanthr_multiple.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanthr_multiple_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanthr_multiple.json'
 
         cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
         logger.info('To be applied:'.format(cmdstr))
@@ -486,14 +499,26 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
 
         if self.test_config.secondaryindex_settings.stale == 'false':
             if numindexes == 1:
-                self.configfile = 'scripts/config_scanlatency_sessionconsistent.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanlatency_sessionconsistent_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanlatency_sessionconsistent.json'
             elif numindexes == 5:
-                self.configfile = 'scripts/config_scanlatency_sessionconsistent_multiple.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanlatency_sessionconsistent_multiple_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanlatency_sessionconsistent_multiple.json'
         else:
             if numindexes == 1:
-                self.configfile = 'scripts/config_scanlatency.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanlatency_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanlatency.json'
             elif numindexes == 5:
-                self.configfile = 'scripts/config_scanlatency_multiple.json'
+                if self.secondaryDB == 'memdb':
+                    self.configfile = 'scripts/config_scanlatency_multiple_memdb.json'
+                else:
+                    self.configfile = 'scripts/config_scanlatency_multiple.json'
 
         cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
         logger.info("Calling command: {}".format(cmdstr))

@@ -31,10 +31,9 @@ stale = false
 db = memdb
 
 [access]
-creates = 1
-reads = 80
-updates = 18
-deletes = 1
+creates = 10
+updates = 80
+deletes = 0
 items = 20000000
 existing_items = 20000000
 throughput = 150000

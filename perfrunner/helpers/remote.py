@@ -270,8 +270,8 @@ class RemoteLinuxHelper(object):
         if silent:
             time.sleep(10)
             res = run(r"ps aux | grep -ie spring | awk '{print $11}'")
-            if "python 2.7" not in res:
-                raise Exception("Spring not run on KV.")
+            if "python2.7" not in res:
+                raise Exception("Spring not run on KV. {}".format(res))
         else:
             if "Current progress: 100.00 %" not in result and "Finished: worker-{}".format(workers - 1) not in result:
                 raise Exception("Spring not run on KV")

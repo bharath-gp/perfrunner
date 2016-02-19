@@ -266,7 +266,15 @@ class RemoteLinuxHelper(object):
             cmdstr += " >/tmp/springlog.log 2>&1 &"
             pty = False
         logger.info(cmdstr)
-        run(cmdstr, pty=pty)
+        result = run(cmdstr, pty=pty)
+        if silent:
+            time.sleep(10)
+            res = run(r"ps aux | grep -ie spring | awk '{print $11}'")
+            if "python 2.7" not in res:
+                raise Exception("Spring not run on KV.")
+        else:
+            if "Current progress: 100.00 %" not in result and "Finished: worker-{}".format(workers - 1) not in result:
+                raise Exception("Spring not run on KV")
 
     @all_kv_nodes
     def check_spring_running(self):

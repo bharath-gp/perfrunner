@@ -537,6 +537,7 @@ class RestHelper(object):
         base64string = base64.encodestring('%s:%s' % (rest_username, rest_password)).replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
 
+        @misc.retry(catch=(KeyError,))
         def get_index_status(json2i, index):
             """
             Return json2i["status"][k]["status"] if json2i["status"][k]["name"]

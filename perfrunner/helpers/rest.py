@@ -590,41 +590,62 @@ class RestHelper(object):
                 num_indexed.append(val)
             return num_indexed
 
-        expected_num_indexed = [numitems] * len(indexes)
-        prev_num_indexed = [None] * len(indexes)
-        steady_count = 0
+        def get_num_pending():
+            data = {}
+            API_TEMP = 'http://{}:9102/stats'
+            for host in hosts:
+                host_data = self.get(url=API_TEMP.format(host)).json()
+                data.update(host_data)
+            num_pending = []
+            for index in indexes:
+                key = "" + bucket + ":" + index + ":num_docs_pending"
+                val = data[key]
+                num_pending.append(val)
+            return num_pending
 
+        expected_num_pending = [0] * len(indexes)
         while True:
             time.sleep(1)
-            curr_num_indexed = get_num_indexed()
-
-            if curr_num_indexed == expected_num_indexed:
+            curr_num_pending = get_num_pending()
+            if curr_num_pending == expected_num_pending:
                 break
+        curr_num_indexed = get_num_indexed()
 
-            # True only if every index's num_docs_indexed is within threshold
-            # of the expected value
-            THRESHOLD = 0.02
-            all_tolerated = all(
-                [
-                    actual >= (1 - THRESHOLD) * expected
-                    for actual, expected in
-                    zip(curr_num_indexed, expected_num_indexed)
-                ])
+        # expected_num_indexed = [numitems] * len(indexes)
+        # prev_num_indexed = [None] * len(indexes)
+        # steady_count = 0
+        #
+        # while True:
+        #     time.sleep(1)
+        #     curr_num_indexed = get_num_indexed()
+        #
+        #     if curr_num_indexed == expected_num_indexed:
+        #         break
+        #
+        #     # True only if every index's num_docs_indexed is within threshold
+        #     # of the expected value
+        #     THRESHOLD = 0.02
+        #     all_tolerated = all(
+        #         [
+        #             actual >= (1 - THRESHOLD) * expected
+        #             for actual, expected in
+        #             zip(curr_num_indexed, expected_num_indexed)
+        #         ])
+        #
+        #     if not all_tolerated:
+        #         continue
+        #
+        #     if prev_num_indexed == curr_num_indexed:
+        #         steady_count += 1
+        #     else:
+        #         prev_num_indexed = curr_num_indexed
+        #         steady_count = 0
+        #
+        #     STEADY_COUNT = 20
+        #     if steady_count == STEADY_COUNT:
+        #         break
 
-            if not all_tolerated:
-                continue
-
-            if prev_num_indexed == curr_num_indexed:
-                steady_count += 1
-            else:
-                prev_num_indexed = curr_num_indexed
-                steady_count = 0
-
-            STEADY_COUNT = 20
-            if steady_count == STEADY_COUNT:
-                break
-
-        logger.info("Actually indexed {}".format(curr_num_indexed))
+        logger.info("Number of Items indexed {}".format(curr_num_indexed))
 
 
 class SyncGatewayRequestHelper(RestHelper):

@@ -609,6 +609,7 @@ class RestHelper(object):
             curr_num_pending = get_num_pending()
             if curr_num_pending == expected_num_pending:
                 break
+            logger.info("Docs pending = {}".format(curr_num_pending))
         curr_num_indexed = get_num_indexed()
 
         # expected_num_indexed = [numitems] * len(indexes)

@@ -34,6 +34,6 @@ creates = 10
 updates = 80
 deletes = 10
 items = 20000000
-existing_items = 20000000
+existing_items = 200000000
 throughput = 150000
 spring_workers = 100

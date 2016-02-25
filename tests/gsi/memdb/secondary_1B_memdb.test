@@ -6,7 +6,7 @@ larger_is_better = false
 
 [cluster]
 mem_quota = 30000
-index_mem_quota = 30000
+index_mem_quota = 300000
 initial_nodes = 8
 num_buckets = 1
 
@@ -32,5 +32,5 @@ db = memdb
 updates = 100
 ops = 1000000000
 items = 1000000000
-throughput = 200000
+existing_items = 1000000000
 spring_workers = 100

@@ -75,6 +75,7 @@ def retry(catch=(), iterations=5, wait=10):
                     if i == (iterations - 1):
                         raise
                     else:
+                        logger.info("Failed to execute the func {} with args {} {}".format(func, *arg, **kwargs))
                         pass
                 else:
                     return result

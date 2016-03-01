@@ -292,6 +292,7 @@ class RemoteLinuxHelper(object):
     def run_cbindexperf(self, index_host, config):
         rest_username, rest_password = self.cluster_spec.rest_credentials
         cmdstr = "echo \"{}\" > /tmp/config.json".format(config)
+        logger.info(cmdstr)
         run("rm -f /tmp/config.json")
         run(cmdstr)
         configfile = "/tmp/config.json"

@@ -516,7 +516,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
                     self.configfile = 'scripts/config_scanlatency_multiple.json'
 
         with open('{}'.format(self.configfile)) as config_file:
-            configdata = config_file.read()
+            configdata = config_file.read().replace('"', r'\"')
             self.remote.run_cbindexperf(self.index_nodes[0], configdata)
         # cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
         # logger.info("Calling command: {}".format(cmdstr))

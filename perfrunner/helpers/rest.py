@@ -599,7 +599,10 @@ class RestHelper(object):
             num_pending = []
             for index in indexes:
                 key = "" + bucket + ":" + index + ":num_docs_pending"
-                val = data[key]
+                val1 = data[key]
+                key = "" + bucket + ":" + index + ":num_docs_queued"
+                val2 = data[key]
+                val = int(val1) + int(val2)
                 num_pending.append(val)
             return num_pending
 

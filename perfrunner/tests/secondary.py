@@ -529,7 +529,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
             latencies = []
             for row in data:
                 duration = row.split(',')[-1]
-                latency = duration.split(':')[1].rsplit()
+                latency = duration.split(':')[1].rstrip()
                 latencies.append(latency)
             timings = map(int, latencies)
             import numpy as np

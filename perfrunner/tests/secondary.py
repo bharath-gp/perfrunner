@@ -407,7 +407,7 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
         with open('{}'.format(self.configfile)) as config_file:
             configdata = json.load(config_file)
         numscans = configdata['ScanSpecs'][0]['Repeat']
-
+        self.remote.get_cbindexperf_result("result.json")
         with open('result.json') as result_file:
             resdata = json.load(result_file)
         duration_s = (resdata['Duration'])

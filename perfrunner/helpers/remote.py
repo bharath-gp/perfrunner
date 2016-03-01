@@ -303,8 +303,8 @@ class RemoteLinuxHelper(object):
         logger.info(result)
 
     @single_host
-    def read_cbindexperf_result(self):
-        return get("/root/result.json")
+    def get_cbindexperf_result(self, localpath):
+        get("/root/result.json", localpath)
 
     @single_host
     def set_dcp_io_threads(self):

@@ -407,7 +407,7 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
         with open('{}'.format(self.configfile)) as config_file:
             configdata = json.load(config_file)
         numscans = configdata['ScanSpecs'][0]['Repeat']
-        self.remote.get_cbindexperf_result("result.json")
+        self.remote.get_files_from_host("/root/result.json", "result.json")
         with open('result.json') as result_file:
             resdata = json.load(result_file)
         duration_s = (resdata['Duration'])
@@ -514,6 +514,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
                     self.configfile = 'scripts/config_scanlatency_multiple.json'
 
         self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
+        self.remote.get_files_from_host("/root/statsfile", "statsfile")
         # cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
         # logger.info("Calling command: {}".format(cmdstr))
         # status = subprocess.call(cmdstr, shell=True)
@@ -521,6 +522,19 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         #     raise Exception('Scan workload could not be applied')
         # else:
         #     logger.info('Scan workload applied')
+
+    def cal_secondaryscan_latency(self, percentile=80):
+        with open('statsfile', 'rb') as fh:
+            data = fh.readlines()
+            latencies = []
+            for row in data:
+                duration = row.split(',')[-1]
+                latency = duration.split(':')[1].rsplit()
+                latencies.append(latency)
+            timings = map(int, latencies)
+            import numpy as np
+            secondary_scanlatency = np.percentile(timings, percentile) / 1000000
+            return round(secondary_scanlatency, 2)
 
     def run(self):
         rmfile = "rm -f {}".format(self.test_config.stats_settings.secondary_statsfile)
@@ -536,11 +550,10 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         from_ts, to_ts = self.build_secondaryindex()
         self.run_access_for_2i(run_in_background=True)
         self.apply_scanworkload()
-        logger.info(self.metric_helper.calc_secondaryscan_latency(percentile=80))
+        secondary_scan_latency = self.cal_secondaryscan_latency(percentile=80)
+        logger.info("Scan Latency = {}".format(secondary_scan_latency))
         if self.test_config.stats_settings.enabled:
-            self.reporter.post_to_sf(
-                *self.metric_helper.calc_secondaryscan_latency(percentile=80)
-            )
+            self.reporter.post_to_sf(secondary_scan_latency)
 
 
 class SecondaryIndexingScanLatencyRebalanceTest(SecondaryIndexingScanLatencyTest):

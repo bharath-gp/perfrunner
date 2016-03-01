@@ -303,8 +303,10 @@ class RemoteLinuxHelper(object):
         logger.info(result)
 
     @single_host
-    def get_cbindexperf_result(self, localpath):
-        get("/root/result.json", localpath)
+    def get_files_from_host(self, remotepath, localpath):
+        result = get(remotepath, localpath)
+        if result.failed:
+            raise Exception("Could not copy {} from remote to {} local".format(remotepath, localpath))
 
     @single_host
     def set_dcp_io_threads(self):

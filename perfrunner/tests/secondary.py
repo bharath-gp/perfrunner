@@ -401,14 +401,9 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
                     self.configfile = 'scripts/config_scanthr_multiple_memdb.json'
                 else:
                     self.configfile = 'scripts/config_scanthr_multiple.json'
-
-        cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
-        logger.info('To be applied:'.format(cmdstr))
-        status = subprocess.call(cmdstr, shell=True)
-        if status != 0:
-            raise Exception('Scan workload could not be applied')
-        else:
-            logger.info('Scan workload applied')
+        with open('{}'.format(self.configfile)) as config_file:
+            configdata = config_file.read()
+            self.remote.run_cbindexperf(self.index_nodes[0], configdata)
 
     def read_scanresults(self):
         with open('{}'.format(self.configfile)) as config_file:
@@ -520,13 +515,16 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
                 else:
                     self.configfile = 'scripts/config_scanlatency_multiple.json'
 
-        cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
-        logger.info("Calling command: {}".format(cmdstr))
-        status = subprocess.call(cmdstr, shell=True)
-        if status != 0:
-            raise Exception('Scan workload could not be applied')
-        else:
-            logger.info('Scan workload applied')
+        with open('{}'.format(self.configfile)) as config_file:
+            configdata = config_file.read()
+            self.remote.run_cbindexperf(self.index_nodes[0], configdata)
+        # cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
+        # logger.info("Calling command: {}".format(cmdstr))
+        # status = subprocess.call(cmdstr, shell=True)
+        # if status != 0:
+        #     raise Exception('Scan workload could not be applied')
+        # else:
+        #     logger.info('Scan workload applied')
 
     def run(self):
         rmfile = "rm -f {}".format(self.test_config.stats_settings.secondary_statsfile)

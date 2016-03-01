@@ -289,6 +289,26 @@ class RemoteLinuxHelper(object):
         result = run(cmdstr)
 
     @single_host
+    def run_cbindexperf(self, index_host, config):
+        rest_username, rest_password = self.cluster_spec.rest_credentials
+        cmdstr = "echo \"{}\" > /tmp/config.json".format(config)
+        run("rm -f /tmp/config.json")
+        run(cmdstr)
+        configfile = "/tmp/config.json"
+        cmdstr = "/opt/couchbase/bin/cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile " \
+                 "/root/result.json -statsfile /root/statsfile".format(index_host, rest_username, rest_password,
+                                                                       configfile)
+        logger.info("Running cbindexperf: {}".format(cmdstr))
+        result = run(cmdstr)
+        if "Throughput = " not in result:
+            raise Exception('Scan workload could not be applied')
+        logger.info(result)
+
+    @single_host
+    def read_cbindexperf_result(self):
+        return get("/root/result.json")
+
+    @single_host
     def set_dcp_io_threads(self):
         cmdstr = "curl -u Administrator:password -XPOST -d 'ns_bucket:update_bucket_props(\"bucket-1\", " \
                  "[{extra_config_string, \"max_num_auxio=16\"}])'"
@@ -296,7 +316,6 @@ class RemoteLinuxHelper(object):
         logger.info("Changing the DCP IO threads")
         logger.info(cmdstr)
         run(cmdstr)
-
 
     @single_host
     def detect_openssl(self, pkg):

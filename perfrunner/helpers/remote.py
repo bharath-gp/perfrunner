@@ -291,10 +291,7 @@ class RemoteLinuxHelper(object):
     @single_host
     def run_cbindexperf(self, index_host, config):
         rest_username, rest_password = self.cluster_spec.rest_credentials
-        cmdstr = "echo \"{}\" > /tmp/config.json".format(config)
-        logger.info(cmdstr)
-        run("rm -f /tmp/config.json")
-        run(cmdstr)
+        put(config, "/tmp/config.json")
         configfile = "/tmp/config.json"
         cmdstr = "/opt/couchbase/bin/cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile " \
                  "/root/result.json -statsfile /root/statsfile".format(index_host, rest_username, rest_password,

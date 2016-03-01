@@ -401,9 +401,7 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
                     self.configfile = 'scripts/config_scanthr_multiple_memdb.json'
                 else:
                     self.configfile = 'scripts/config_scanthr_multiple.json'
-        with open('{}'.format(self.configfile)) as config_file:
-            configdata = config_file.read()
-            self.remote.run_cbindexperf(self.index_nodes[0], configdata)
+        self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
 
     def read_scanresults(self):
         with open('{}'.format(self.configfile)) as config_file:
@@ -515,9 +513,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
                 else:
                     self.configfile = 'scripts/config_scanlatency_multiple.json'
 
-        with open('{}'.format(self.configfile)) as config_file:
-            configdata = config_file.read().replace('"', r'\"')
-            self.remote.run_cbindexperf(self.index_nodes[0], configdata)
+        self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
         # cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
         # logger.info("Calling command: {}".format(cmdstr))
         # status = subprocess.call(cmdstr, shell=True)

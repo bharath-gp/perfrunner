@@ -548,7 +548,7 @@ class RestHelper(object):
                     return d["status"]
             return None
 
-        @misc.retry(catch=(KeyError, urllib2.HTTPError), iterations=10, wait=15)
+        @misc.retry(catch=(KeyError, urllib2.HTTPError), iterations=10, wait=30)
         def check_indexes_ready():
             response = urllib2.urlopen(request)
             data = str(response.read())

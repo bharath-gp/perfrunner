@@ -287,6 +287,8 @@ class RemoteLinuxHelper(object):
     def kill_spring_processes(self):
         cmdstr = "ps aux | grep -ie spring | awk '{print $2}' | xargs kill -9"
         result = run(cmdstr)
+        if result.failed:
+            pass
 
     @single_host
     def run_cbindexperf(self, index_host, config):

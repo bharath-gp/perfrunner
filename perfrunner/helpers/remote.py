@@ -286,7 +286,7 @@ class RemoteLinuxHelper(object):
     @all_kv_nodes
     def kill_spring_processes(self):
         cmdstr = "ps aux | grep -ie spring | awk '{print $2}' | xargs kill -9"
-        result = run(cmdstr)
+        result = run(cmdstr, quiet=True)
         if result.failed:
             pass
 

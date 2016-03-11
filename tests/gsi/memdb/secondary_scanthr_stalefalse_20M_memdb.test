@@ -30,9 +30,7 @@ stale = false
 db = memdb
 
 [access]
-creates = 10
-updates = 80
-deletes = 10
-items = 200000000
+updates = 100
+items = 300000000
 existing_items = 20000000
 spring_workers = 100

@@ -402,6 +402,7 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
                 else:
                     self.configfile = 'scripts/config_scanthr_multiple.json'
         self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
+        self.remote.kill_spring_processes()
 
     def read_scanresults(self):
         with open('{}'.format(self.configfile)) as config_file:
@@ -515,6 +516,7 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
 
         self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
         self.remote.get_files_from_host("/root/statsfile", "statsfile")
+        self.remote.kill_spring_processes()
         # cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
         # logger.info("Calling command: {}".format(cmdstr))
         # status = subprocess.call(cmdstr, shell=True)

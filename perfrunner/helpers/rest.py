@@ -537,7 +537,6 @@ class RestHelper(object):
         base64string = base64.encodestring('%s:%s' % (rest_username, rest_password)).replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
 
-        @misc.retry(catch=(KeyError, urllib2.HTTPError))
         def get_index_status(json2i, index):
             """
             Return json2i["status"][k]["status"] if json2i["status"][k]["name"]
@@ -548,20 +547,34 @@ class RestHelper(object):
                     return d["status"]
             return None
 
-        @misc.retry(catch=(KeyError, urllib2.HTTPError), iterations=10, wait=30)
+        @misc.retry(catch=KeyError, iterations=10, wait=30)
         def check_indexes_ready():
-            response = urllib2.urlopen(request)
-            data = str(response.read())
-            json2i = json.loads(data)
-            for i, index in enumerate(indexes):
-                status = get_index_status(json2i, index)
-                if(status == 'Ready'):
-                    IndexesReady[i] = 1
-
+            try:
+                response = urllib2.urlopen(request)
+                data = str(response.read())
+                json2i = json.loads(data)
+                for i, index in enumerate(indexes):
+                    status = get_index_status(json2i, index)
+                    if status == 'Ready':
+                        IndexesReady[i] = 1
+            except urllib2.HTTPError as e:
+                logger.warning("HTTPError {}".format(e))
+                api_temp = 'http://{}:9102/stats'.format(host)
+                host_data = self.get(url=api_temp).json()
+                data = {}
+                data.update(host_data)
+                for i, ind in enumerate(indexes):
+                    key = "bucket-1:" + ind + ":num_docs_pending"
+                    val1 = data[key]
+                    key = "bucket-1:" + ind + ":num_docs_queued"
+                    val2 = data[key]
+                    val = int(val1) + int(val2)
+                    if val == 0:
+                        IndexesReady[i] = 1
         while True:
             time.sleep(1)
             check_indexes_ready()
-            if(sum(IndexesReady) == len(indexes)):
+            if sum(IndexesReady) == len(indexes):
                 break
 
         finish_ts = time.time()

@@ -306,6 +306,8 @@ class InitialandIncrementalSecondaryIndexTest(SecondaryIndexTest):
             *self.metric_helper.get_indexing_meta(value=time_elapsed,
                                                   index_type='Initial')
         )
+        if self.secondaryDB != 'memdb':
+            time.sleep(300)
         from_ts, to_ts = self.build_incrindex()
         time_elapsed = (to_ts - from_ts) / 1000.0
         time_elapsed = self.reporter.finish('Incremental secondary index', time_elapsed)
@@ -348,6 +350,8 @@ class InitialandIncrementalSecondaryIndexRebalanceTest(InitialandIncrementalSeco
             *self.metric_helper.get_indexing_meta(value=time_elapsed,
                                                   index_type='Initial')
         )
+        if self.secondaryDB != 'memdb':
+            time.sleep(300)
         master = []
         for _, servers in self.cluster_spec.yield_clusters():
             master = servers[0]
@@ -423,6 +427,8 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
+        if self.secondaryDB != 'memdb':
+            time.sleep(300)
         self.run_access_for_2i(run_in_background=True)
         self.apply_scanworkload()
         scanthr, rowthr = self.read_scanresults()
@@ -460,6 +466,8 @@ class SecondaryIndexingThroughputRebalanceTest(SecondaryIndexingThroughputTest):
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
+        if self.secondaryDB != 'memdb':
+            time.sleep(300)
         self.run_access_for_2i(run_in_background=True)
         initial_nodes = []
         nodes_after = [0]
@@ -550,6 +558,8 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
         self.wait_for_persistence()
         self.compact_bucket()
         from_ts, to_ts = self.build_secondaryindex()
+        if self.secondaryDB != 'memdb':
+            time.sleep(300)
         self.run_access_for_2i(run_in_background=True)
         self.apply_scanworkload()
         secondary_scan_latency = self.cal_secondaryscan_latency(percentile=80)
@@ -596,6 +606,8 @@ class SecondaryIndexingScanLatencyRebalanceTest(SecondaryIndexingScanLatencyTest
         initial_nodes = self.test_config.cluster.initial_nodes
         nodes_after[0] = initial_nodes[0] + 1
         from_ts, to_ts = self.build_secondaryindex()
+        if self.secondaryDB != 'memdb':
+            time.sleep(300)
         self.run_access_for_2i(run_in_background=True)
         self.rebalance(initial_nodes[0], nodes_after[0])
         self.apply_scanworkload()

@@ -33,4 +33,5 @@ db = memdb
 updates = 100
 existing_items = 20000000
 items = 300000000
+throughput = 100000
 spring_workers = 100

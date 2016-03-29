@@ -405,14 +405,20 @@ class SecondaryIndexingThroughputTest(SecondaryIndexTest):
                     self.configfile = 'scripts/config_scanthr_multiple_memdb.json'
                 else:
                     self.configfile = 'scripts/config_scanthr_multiple.json'
-        self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
-        #self.remote.kill_spring_processes()
+        cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json".format(
+            self.index_nodes[0], rest_username, rest_password, self.configfile)
+        logger.info('To be applied:'.format(cmdstr))
+        status = subprocess.call(cmdstr, shell=True)
+        if status != 0:
+            raise Exception('Scan workload could not be applied')
+        else:
+            logger.info('Scan workload applied')
 
     def read_scanresults(self):
         with open('{}'.format(self.configfile)) as config_file:
             configdata = json.load(config_file)
         numscans = configdata['ScanSpecs'][0]['Repeat']
-        self.remote.get_files_from_host("/root/result.json", "result.json")
+        #self.remote.get_files_from_host("/root/result.json", "result.json")
         with open('result.json') as result_file:
             resdata = json.load(result_file)
         duration_s = (resdata['Duration'])
@@ -522,16 +528,16 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
                 else:
                     self.configfile = 'scripts/config_scanlatency_multiple.json'
 
-        self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
-        self.remote.get_files_from_host("/root/statsfile", "statsfile")
-        #self.remote.kill_spring_processes()
-        # cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(self.index_nodes[0], rest_username, rest_password, self.configfile)
-        # logger.info("Calling command: {}".format(cmdstr))
-        # status = subprocess.call(cmdstr, shell=True)
-        # if status != 0:
-        #     raise Exception('Scan workload could not be applied')
-        # else:
-        #     logger.info('Scan workload applied')
+        #self.remote.run_cbindexperf(self.index_nodes[0], self.configfile)
+        #self.remote.get_files_from_host("/root/statsfile", "statsfile")
+        cmdstr = "cbindexperf -cluster {} -auth=\"{}:{}\" -configfile {} -resultfile result.json -statsfile /root/statsfile".format(
+            self.index_nodes[0], rest_username, rest_password, self.configfile)
+        logger.info("Calling command: {}".format(cmdstr))
+        status = subprocess.call(cmdstr, shell=True)
+        if status != 0:
+            raise Exception('Scan workload could not be applied')
+        else:
+            logger.info('Scan workload applied')
 
     def cal_secondaryscan_latency(self, percentile=80):
         with open('statsfile', 'rb') as fh:
@@ -562,10 +568,11 @@ class SecondaryIndexingScanLatencyTest(SecondaryIndexTest):
             time.sleep(300)
         self.run_access_for_2i(run_in_background=True)
         self.apply_scanworkload()
-        secondary_scan_latency = self.cal_secondaryscan_latency(percentile=80)
-        logger.info("Scan Latency = {}".format(secondary_scan_latency))
+        logger.info(self.metric_helper.calc_secondaryscan_latency(percentile=80))
         if self.test_config.stats_settings.enabled:
-            self.reporter.post_to_sf(secondary_scan_latency)
+            self.reporter.post_to_sf(
+                *self.metric_helper.calc_secondaryscan_latency(percentile=80)
+            )
 
 
 class SecondaryIndexingScanLatencyRebalanceTest(SecondaryIndexingScanLatencyTest):
@@ -614,7 +621,9 @@ class SecondaryIndexingScanLatencyRebalanceTest(SecondaryIndexingScanLatencyTest
         scan_latency = self.cal_secondaryscan_latency(percentile=80)
         logger.info("Scan latency = {}".format(scan_latency))
         if self.test_config.stats_settings.enabled:
-            self.reporter.post_to_sf(scan_latency)
+            self.reporter.post_to_sf(
+                *self.metric_helper.calc_secondaryscan_latency(percentile=80)
+            )
 
 
 class SecondaryIndexingLatencyTest(SecondaryIndexTest):

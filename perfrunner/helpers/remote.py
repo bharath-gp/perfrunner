@@ -259,7 +259,8 @@ class RemoteLinuxHelper(object):
         if operation != 0:
             cmdstr += " -o {}".format(operation)
         if throughput != float('inf'):
-            cmdstr += " -t {}".format(throughput)
+            thrput = int(throughput / (number_of_kv_nodes * 100)) * 100
+            cmdstr += " -t {}".format(thrput)
         cmdstr += " cb://Administrator:password@{}:8091/bucket-1".format(self.hosts[0])
         pty = True
         if silent:

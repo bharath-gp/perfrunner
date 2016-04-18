@@ -33,4 +33,5 @@ updates = 100
 ops = 500000000
 items = 500000000
 existing_items = 500000000
+throughput = 100000
 spring_workers = 100

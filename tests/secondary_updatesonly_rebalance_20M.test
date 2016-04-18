@@ -28,4 +28,3 @@ updates = 100
 ops = 20000000
 items = 20000000
 workers = 20
-throughput = 3600

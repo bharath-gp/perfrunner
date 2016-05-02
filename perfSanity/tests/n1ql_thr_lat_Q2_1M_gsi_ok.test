@@ -11,6 +11,7 @@ initial_nodes = 3
 num_buckets = 1
 
 [stats]
+add_snapshots = 0
 seriesly_host = 10.5.3.40
 
 [bucket]
@@ -26,18 +27,25 @@ view_percentage = 100
 indexes =
     by_email::CREATE INDEX {name} ON `{bucket}` (email) using gsi;
 
+[load]
+items = 500000
+size = 1024
+workers = 20
+doc_gen = reverse_lookup
+doc_partitions = 1
+
 [access]
 creates = 0
-reads = 100
-updates = 0
+reads = 80
+updates = 20
 deletes = 0
-throughput = 18000
-items = 1000000
-workers = 24
-time = 600
+throughput = 180
+items = 1000
+workers = 4
+time = 300
 n1ql_queries = singleton-unique-lookup
-n1ql_throughput = 9000
-n1ql_workers = 72
+n1ql_throughput = 1500
+n1ql_workers = 15
 
 [n1ql-singleton-unique-lookup]
 prepared = singleton_unique_lookup

@@ -10,6 +10,7 @@ initial_nodes = 2
 num_buckets = 1
 
 [stats]
+add_snapshots = 0
 seriesly_host = 10.5.3.40
 
 [compaction]
@@ -43,5 +44,5 @@ working_set_access = 98
 
 [rebalance]
 nodes_after = 3
-start_after = 600
-stop_after = 600
+start_after = 1200
+stop_after = 1200

@@ -37,8 +37,9 @@ def with_stats(method, *args, **kwargs):
     if stats_enabled:
         test.cbagent.stop()
 
-        test.cbagent.add_snapshot(method.__name__, from_ts, to_ts)
-        test.snapshots = test.cbagent.snapshots
+        if test.test_config.stats_settings.add_snapshots:
+           test.cbagent.add_snapshot(method.__name__, from_ts, to_ts)
+           test.snapshots = test.cbagent.snapshots
 
     from_ts = timegm(from_ts.timetuple()) * 1000  # -> ms
     to_ts = timegm(to_ts.timetuple()) * 1000  # -> ms
@@ -227,10 +228,13 @@ class CbAgent(object):
             if rest is not None:
                 data_path, index_path = rest.get_data_path(
                     settings.master_node)
-
-            partitions = {'data': data_path}
-            if hasattr(test, 'ddocs'):  # all instances of IndexTest have it
-                partitions['index'] = index_path
+            if hasattr(settings, "monitor_clients") and settings.monitor_clients\
+                    and settings.master_node in settings.monitor_clients:
+                partitions = {'backup': test.remote.cluster_spec.config.get('storage', 'backup_path')}
+            else:
+                partitions = {'data': data_path}
+                if hasattr(test, 'ddocs'):  # all instances of IndexTest have it
+                    partitions['index'] = index_path
 
             settings.partitions = partitions
             io_collector = IO(settings)

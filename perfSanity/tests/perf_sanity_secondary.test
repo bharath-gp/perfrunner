@@ -6,19 +6,23 @@ larger_is_better = false
 
 [cluster]
 mem_quota = 1000
+index_mem_quota=1000
 initial_nodes = 3
 num_buckets = 1
 
 
 [stats]
+add_snapshots = 0
+add_snapshots = 0
 seriesly_host = 10.5.3.40
+add_snapshots = 0
 
 [compaction]
 db_percentage = 100
 view_percentage = 100
 
 [load]
-items = 2000000
+items = 200000
 size = 2048
 workers = 2
 
@@ -28,6 +32,6 @@ field = email
 
 [access]
 creates = 100
-ops = 2000000
-items = 2000000
+ops = 200000
+items = 200000
 workers = 2

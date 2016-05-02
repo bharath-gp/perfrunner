@@ -23,8 +23,8 @@ DEFAULT_FTS_CREATE = {
     u'sourceParams': u'{"authUser":"bucket-1","authPassword":"","authSaslUser":"","authSaslPassword":"","clusterManagerBackoffFactor":0,"clusterManagerSleepInitMS":0,"clusterManagerSleepMaxMS":2000,"dataManagerBackoffFactor":0,"dataManagerSleepInitMS":0,"dataManagerSleepMaxMS":2000,"feedBufferSizeBytes":0,"feedBufferAckThreshold":0}',
     u'sourceType': u'couchbase',
     u'sourceUUID': u'',
-    u'type': u'fulltext-index',
-    u'uuid': u'565cea4df8d4e0ed'}
+    u'type': u'fulltext-index'}
+
 
 
 class FtsIndexTest(PerfTest):
@@ -36,7 +36,7 @@ class FtsIndexTest(PerfTest):
         data = dict(DEFAULT_FTS_CREATE)
         data['name'] = index_name
         jstr = json.dumps(data)
-        r = requests.put(url, data=jstr, headers=FTS_CREATE_HEADERS)
+        r = requests.put(url, data=jstr, auth=(self.rest.rest_username, self.rest.rest_password), headers=FTS_CREATE_HEADERS)
         if not r.status_code == 200:
             logger.info("URL: %s" % url)
             logger.info("data: %s" % data)
@@ -51,6 +51,7 @@ class FtsIndexTest(PerfTest):
         url = "http://{}:{}/api/index/{}/count".format(
             fts_node, fts_port, index_name)
         last_reported = time.time()
+        time.sleep(10)    # wait for the indexer to get organized
         while True:
             r = requests.get(url)
             if not r.status_code == 200:
@@ -95,5 +96,6 @@ class FtsIndexTest(PerfTest):
         self.wait_for_index(fts_node, index_name, num_docs)
         end_time = time.time()
         elapsed_time = end_time - start_time
+        self.reporter.post_to_sf( elapsed_time, metric='index_time' )
         logger.info("FTS initial index build time took {} seconds".format(
             elapsed_time))

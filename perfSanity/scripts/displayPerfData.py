@@ -107,8 +107,8 @@ def main():
 
     # query for everything based on the run id
     queryBaseString = """
-    select testName, testMetric, pass, expectedValue,actualValue,`build`, reason from `Daily-Performance`
-    where runStartTime = '{0}' and `build`='{1}'  order by pass;
+    select testName, testMetric, pass, expectedValue,actualValue,`build`,reason,runStartTime from `Daily-Performance`
+    where runStartTime = '{0}' and `build`='{1}'  order by testName, runStartTime;
     """
 
     queryString = queryBaseString.format(options.runStart, options.version)
@@ -123,6 +123,10 @@ def main():
     failingTests = []
     stabilizingTests = []
     environmentalIssues = []
+    passedOnSecondRun  = []
+    failedOnSecondRun = []
+
+
 
     for row in results:
         #print 'row is ',row
@@ -132,6 +136,8 @@ def main():
 
         if 'testMetric' in row:
             row['testMetric'] = row['testMetric'].replace('perf_sanity_','').replace('_base_test','') #.replace('_perf_sanity_secondary','')
+            if row['testMetric'] == 'avg_query_requests': row['testMetric'] = 'throughput'
+            if 'n1ql_thr_lat_' in row['testMetric'] : row['testMetric'] = 'latency'
 
 
             # check for other stuff like MBs
@@ -150,16 +156,71 @@ def main():
 
             if row['status'] == 'beta' or row['notes'] == 'stabilizing':
                 stabilizingTests.append( row)
-            elif row['pass']:
-                passingTests.append( row)
             else:
-                failingTests.append( row )
+                # check if this test failed already
+                alreadyPassed = False
+                alreadyFailed = False
+                for i in failingTests:
+                    if row['testMetric'] == i['testMetric'] and row['testName'] == i['testName']:
+                        alreadyFailed =True
+                        break
+
+                for i in passingTests:
+                    if row['testMetric'] == i['testMetric'] and row['testName'] == i['testName']:
+                        alreadyPassed =True
+                        break
+
+                if row['pass']:
+                    if alreadyPassed:
+                        pass # passed twice, this is a no-op
+                    else:
+                        passingTests.append( row )
+                        if alreadyFailed:
+                            # remove the failing record
+                            testToRemove = -1
+                            for i in range(len(failingTests)):
+                                if row['testName'] == failingTests[i]['testName'] and \
+                                    row['testMetric'] == failingTests[i]['testMetric']:
+                                    testToRemove = i
+                                    passedOnSecondRun.append(failingTests[i])
+                                    break
+                            if testToRemove >= 0:
+                                failingTests.pop(testToRemove)
+
+                else:   # failed this time
+                    if alreadyFailed:
+                        pass # if failed twice already have it
+                    elif alreadyPassed:
+                        failedOnSecondRun.append( row ) # and keep the pass
+                    else:
+                        failingTests.append( row )
+
         else:
             environmentalIssues.append( row )
 
 
-    print 'Performance Daily Sanity {0}: {1} tests, {2} failures'.format( options.version, len(passingTests) + len(failingTests), \
-         len(failingTests) )
+    filteredEnvironmentalIssues = []
+    for e in environmentalIssues:
+        haveAnotherResult = False
+        for p in passingTests:
+            if e['testName'] == p['testName']:
+                haveAnotherResult = True
+                break
+        for p in failingTests:
+            if e['testName'] == p['testName']:
+                haveAnotherResult = True
+                break
+        if not haveAnotherResult:
+            filteredEnvironmentalIssues.append(e)
+
+
+
+    summary = 'Performance Daily Sanity {0}: {1} total tests, {2} pass, {3} failures'.format( options.version,
+                 len(passingTests) + len(failingTests) + len(filteredEnvironmentalIssues),  len(passingTests),
+                    len(failingTests) )
+    if len(environmentalIssues) > 0:
+        summary = '{0} and {1} tests without results due to enviromental issues'.format( summary, len(filteredEnvironmentalIssues) )
+    print summary
 
 
     if len(failingTests) > 0:
@@ -172,6 +233,17 @@ def main():
         print format_as_table( sorted(passingTests, key=lambda k: k['testName']), ['testName','testMetric','expectedValue','actualValue'],
                                ['Test Name','Metric','Expected','Actual'] )
 
+    if len(passedOnSecondRun) > 0:
+        print '\n\nPassed on second run, these are the first run results:\n'
+        print format_as_table( sorted(passedOnSecondRun, key=lambda k: k['testName']), ['testName','testMetric','expectedValue','actualValue'],
+                               ['Test Name','Metric','Expected','Actual'] )
+
+
+    if len(failedOnSecondRun) > 0:
+        print '\n\nPassed on first run, failed on the second run, these are the second run results:\n'
+        print format_as_table( sorted(failedOnSecondRun, key=lambda k: k['testName']), ['testName','testMetric','expectedValue','actualValue'],
+                               ['Test Name','Metric','Expected','Actual'] )
+
 
 
 
@@ -180,9 +252,11 @@ def main():
         print format_as_table( sorted(stabilizingTests, key=lambda k: k['testName']), ['testName','testMetric','expectedValue','actualValue'],
                                ['Test Name','Metric','Expected','Actual'] )
 
-    if len(environmentalIssues) > 0:
+
+
+    if len(filteredEnvironmentalIssues) > 0:
         print '\n\nEnvironment issues:\n'
-        print format_as_table( environmentalIssues, ['testName','reason'],
+        print format_as_table( filteredEnvironmentalIssues, ['testName','reason'],
                            ['Test Name','Reason'] )
 
 

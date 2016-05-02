@@ -347,6 +347,7 @@ class StatsSettings(object):
 
     CBMONITOR = {'host': 'cbmonitor.sc.couchbase.com', 'password': 'password'}
     ENABLED = 1
+    ADD_SNAPSHOTS = 1
     POST_TO_SF = 0
     INTERVAL = 5
     SECONDARY_STATSFILE = '/root/statsfile'
@@ -361,6 +362,7 @@ class StatsSettings(object):
                                               self.CBMONITOR['host']),
                           'password': options.get('cbmonitor_password',
                                                   self.CBMONITOR['password'])}
+        self.add_snapshots = int(options.get('add_snapshots', self.ADD_SNAPSHOTS))
         self.enabled = int(options.get('enabled', self.ENABLED))
         self.post_to_sf = int(options.get('post_to_sf', self.POST_TO_SF))
         self.interval = int(options.get('interval', self.INTERVAL))
@@ -601,6 +603,7 @@ class XDCRSettings(object):
     XDCR_REPLICATION_TYPE = 'bidir'
     XDCR_REPLICATION_PROTOCOL = None
     XDCR_USE_SSL = False
+    XDCR_USE_CA_CERT = False
     WAN_ENABLED = False
     FILTER_EXPRESSION = None
 
@@ -610,6 +613,7 @@ class XDCRSettings(object):
         self.replication_protocol = options.get('replication_protocol',
                                                 self.XDCR_REPLICATION_PROTOCOL)
         self.use_ssl = int(options.get('use_ssl', self.XDCR_USE_SSL))
+        self.use_ca_cert = int(options.get('use_ca_cert', self.XDCR_USE_CA_CERT))
         self.wan_enabled = int(options.get('wan_enabled', self.WAN_ENABLED))
         self.filter_expression = options.get('filter_expression', self.FILTER_EXPRESSION)
 
@@ -680,6 +684,7 @@ class SecondaryIndexSettings(object):
             'indexer.settings.max_cpu_percent': 2400,
             'indexer.settings.persisted_snapshot.interval': 5000,
             'indexer.settings.scan_timeout': 0,
+            'indexer.settings.storage_mode': 'forestdb',
             'projector.settings.log_level': 'info'
         }
 

@@ -21,6 +21,11 @@ def single_host(task, *args, **kargs):
     with settings(host_string=self.hosts[0]):
         return task(*args, **kargs)
 
+@decorator
+def single_client(task, *args, **kargs):
+    self = args[0]
+    with settings(host_string=self.cluster_spec.workers[0]):
+        return task(*args, **kargs)
 
 @decorator
 def all_clients(task, *args, **kargs):
@@ -83,7 +88,7 @@ class RemoteHelper(object):
         logger.info('Detecting OS')
         with settings(host_string=cluster_spec.yield_hostnames().next()):
             os = run('python -c "import platform; print platform.dist()[0]"',
-                     pty=False)
+                     pty=True)
         if os:
             return os
         else:
@@ -115,6 +120,7 @@ class RemoteLinuxHelper(object):
 
     CB_DIR = '/opt/couchbase'
     MONGO_DIR = '/opt/mongodb'
+    INBOX_FOLDER = "inbox"
 
     PROCESSES = ('beam.smp', 'memcached', 'epmd', 'cbq-engine', 'mongod', 'indexer',
                  'cbft', 'goport', 'goxdcr', 'couch_view_index_updater', 'moxi', 'spring')
@@ -146,7 +152,7 @@ class RemoteLinuxHelper(object):
     @single_host
     def detect_pkg(self):
         logger.info('Detecting package manager')
-        if self.os in ('Ubuntu', 'Debian'):
+        if self.os.upper() in ('UBUNTU', 'DEBIAN'):
             return 'deb'
         else:
             return 'rpm'
@@ -154,19 +160,19 @@ class RemoteLinuxHelper(object):
     @single_host
     def detect_arch(self):
         logger.info('Detecting platform architecture')
-        arch = run('uname -i', pty=False)
+        arch = run('uname -i', pty=True)
         return self.ARCH[arch]
 
     @single_host
     def build_secondary_index(self, index_nodes, bucket, indexes, fields,
-                              secondarydb, where_map):
+                              secondarydb, where_map, commandPath='/opt/couchbase/bin/'):
         logger.info('building secondary indexes')
 
         # Remember what bucket:index was created
         bucket_indexes = []
 
         for index, field in zip(indexes, fields):
-            cmd = "/opt/couchbase/bin/cbindex"
+            cmd = commandPath + "cbindex"
             cmd += ' -auth=Administrator:password'
             cmd += ' -server {}'.format(index_nodes[0])
             cmd += ' -type create -bucket {}'.format(bucket)
@@ -214,7 +220,7 @@ class RemoteLinuxHelper(object):
         time.sleep(10)
 
         # build indexes
-        cmdstr = '/opt/couchbase/bin/cbindex -auth="Administrator:password"'
+        cmdstr = commandPath + 'cbindex -auth="Administrator:password"'
         cmdstr += ' -server {}'.format(index_nodes[0])
         cmdstr += ' -type build'
         cmdstr += ' -indexes {}'.format(",".join(bucket_indexes))
@@ -325,6 +331,13 @@ class RemoteLinuxHelper(object):
         logger.info('Detecting openssl version')
         if pkg == 'rpm':
             return run('rpm -q --qf "%{VERSION}" openssl.x86_64')
+
+    @all_hosts
+    def setup_master_ca_cert(self, src_chain_file, dest_chain_folder):
+        path_to_root_cert = dest_chain_folder + "root.crt"
+        run('mkdir -p {}'.format(dest_chain_folder))
+        put(src_chain_file + "root.crt", path_to_root_cert)
+        run('/opt/couchbase/bin/couchbase-cli ssl-manage --cluster=localhost -u Administrator -p password --upload-cluster-ca={}/root.crt'.format(dest_chain_folder ))
 
     @all_hosts
     def reset_swap(self):
@@ -530,6 +543,23 @@ class RemoteLinuxHelper(object):
         logger.info('Getting cbq-engine logs')
         get('/tmp/cbq.log')
 
+    @all_hosts
+    def delete_inbox_folder(self):
+        final_path = self.CB_DIR + self.INBOX_FOLDER
+        run('rm -rf ' + final_path)
+
+    @all_hosts
+    def setup_cluster_nodes(self, dest_chain_folder):
+        run('mkdir -p {}'.format(dest_chain_folder))
+        local_ip = self.detect_ip(self.detect_if())
+        src_chain_file = "/tmp/newcerts/long_chain" + local_ip + ":8091.pem"
+        dest_chain_file = dest_chain_folder + "chain.pem"
+        put(src_chain_file, dest_chain_file)
+        src_node_key = "/tmp/newcerts/" + local_ip + ":8091.key"
+        dest_node_key = dest_chain_folder + "pkey.pem"
+        put(src_node_key, dest_node_key)
+        run('/opt/couchbase/bin/couchbase-cli ssl-manage --cluster=localhost -u Administrator -p password --set-node-certificate')
+
     @all_clients
     def cbbackup(self, wrapper=False, mode=None):  # full, diff, accu
         backup_path = self.cluster_spec.config.get('storage', 'backup_path')
@@ -552,9 +582,9 @@ class RemoteLinuxHelper(object):
         else:
             for master in self.cluster_spec.yield_masters():
                 if not mode:
-                    run('/opt/couchbase/bin/backup create --dir %s --name default' % backup_path)
+                    run('/opt/couchbase/bin/cbbackupmgr config --archive %s --repo default' % backup_path)
                 # EE backup does not support modes, ignore 'full, diff, accu'
-                cmd = '/opt/couchbase/bin/backup cluster --dir %s --name default ' \
+                cmd = '/opt/couchbase/bin/cbbackupmgr backup --archive %s --repo default ' \
                     '--host http://%s:8091 --username %s --password %s --threads 16' \
                     % (backup_path, master.split(':')[0],
                         self.cluster_spec.rest_credentials[0],
@@ -569,6 +599,7 @@ class RemoteLinuxHelper(object):
     def cbrestore(self, wrapper=False):
         restore_path = self.cluster_spec.config.get('storage', 'backup_path')
         logger.info('restore from %s' % restore_path)
+        start = time.time()
         if wrapper:
             for master in self.cluster_spec.yield_masters():
                 cmd = 'cd /opt/couchbase/bin && ./cbrestorewrapper %s ' \
@@ -583,13 +614,86 @@ class RemoteLinuxHelper(object):
                     start_date = end_date = dates[i]
                     if i < len(dates) - 1:
                         end_date = dates[i + 1]
-                    cmd = '/opt/couchbase/bin/backup restore --dir %s --name default ' \
+                    cmd = '/opt/couchbase/bin/cbbackupmgr restore --archive %s --repo default ' \
                         '--host http://%s:8091 --username %s --password %s --start %s --end %s ' \
                         '--threads 16' % (restore_path, master.split(':')[0],
                                           self.cluster_spec.rest_credentials[0],
                                           self.cluster_spec.rest_credentials[1],
                                           start_date, end_date)
                     run(cmd)
+        return int(time.time() - start)
+
+    @single_client
+    def generate_certs(self, root_cn='Root\ Authority', type='go',
+                       encryption="", key_length=1024):
+        cert_folder = "/tmp/newcerts/"
+        for _, master in zip(self.cluster_spec.workers,
+                                  self.cluster_spec.yield_masters()):
+            for bucket in self.test_config.buckets:
+                qname = '{}-{}'.format(master.split(':')[0], bucket)
+                temp_dir = '{}-{}'.format(
+                    self.test_config.worker_settings.worker_dir, qname)
+
+        if type == 'go':
+            cert_file = "{}/perfrunner/scripts/security/gencert.go".\
+                format(temp_dir)
+            run("rm -rf {}".format(cert_folder))
+            run("mkdir {}".format(cert_folder))
+
+            run("go run {} -store-to=/tmp/newcerts/root -common-name={}".
+                format(cert_file, root_cn))
+            run("go run {} -store-to={}/interm -sign-with={}/root "
+                "-common-name=Intemediate\ Authority".format(
+                    cert_file, cert_folder, cert_folder))
+            for _, servers in self.cluster_spec.yield_clusters():
+                for server in servers:
+                    run("go run {} -store-to={}{} -sign-with={}interm "
+                        "-common-name={} -final=true".format(
+                            cert_file, cert_folder, server, cert_folder, server))
+                    run("cat {}{}.crt {}interm.crt > {}/long_chain{}.pem".
+                        format(cert_folder, server, cert_folder,
+                               cert_folder, server))
+        elif type == 'openssl':
+            v3_ca = "./pytests/security/v3_ca.crt"
+            run("rm -rf /tmp/newcerts")
+            run("mkdir /tmp/newcerts")
+            run("openssl genrsa {} -out {}ca.key {}".format(
+                encryption, cert_folder, str(key_length)))
+            run("openssl req -new -x509  -days 3650 -sha256 -key {}ca.key -out"
+                " /tmp/newcerts/ca.pem -subj '/C=UA/O=My "
+                "Company/CN=My Company Root CA'".format(cert_folder))
+            run("openssl genrsa {} -out {}/int.key {}".format(
+                encryption, cert_folder, str(key_length)))
+            run("openssl req -new -key {}int.key -out {}/int.csr -subj "
+                "'/C=UA/O=My Company/CN=My Company Intermediate CA'".
+                format(cert_folder, cert_folder))
+            run("openssl x509 -req -in {}int.csr -CA {}ca.pem -CAkey {}ca.key "
+                "-CAcreateserial -CAserial {}rootCA.srl -extfile {} "
+                "-out {}int.pem -days 365 -sha256".
+                format(cert_folder, cert_folder, cert_folder,
+                       cert_folder, v3_ca, cert_folder))
+            for _, servers in self.cluster_spec.yield_clusters():
+                for server in servers:
+                    run("openssl genrsa {} -out {}{}.key {}".format(
+                        encryption, cert_folder, server, str(key_length)))
+                    run("openssl req -new -key {}{}.key -out {}{}.csr -subj "
+                        "'/C=UA/O=My Company/CN={}'".format(
+                            cert_folder, server, cert_folder, server, server))
+                    run("openssl x509 -req -in {}{}.csr -CA {}int.pem -CAkey"
+                        " {}int.key -CAcreateserial -CAserial {}intermediateCA.srl "
+                        "-out .pem -days 365 -sha256".format(
+                        cert_folder, server, cert_folder, cert_folder,
+                        cert_folder, cert_folder, server))
+                    run("openssl x509 -req -days 300 -in {}{}.csr -CA {}int.pem "
+                        "-CAkey {}int.key -set_serial 01 -out {}{}.pem".format(
+                            cert_folder, server, cert_folder,
+                            cert_folder, cert_folder, server))
+                    run("cat {}{}.pem {}int.pem > {}long_chain{}.pem".format(
+                        cert_folder, server, cert_folder, cert_folder, server))
+
+    @single_client
+    def copy_folder_locally(self, src_folder='/tmp/newcerts/', dest_folder='/tmp/newcerts/'):
+        get(src_folder, dest_folder)
 
     @seriesly_host
     def restart_seriesly(self):
@@ -949,3 +1053,10 @@ class RemoteWindowsHelper(RemoteLinuxHelper):
 
     def tune_log_rotation(self):
         pass
+
+
+    def build_secondary_index(self, index_nodes, bucket, indexes, fields,
+                              secondarydb, where_map):
+
+        super(RemoteWindowsHelper, self).build_secondary_index(index_nodes, bucket, indexes, fields,
+                              secondarydb, where_map, commandPath='/cygdrive/c/program\\ files/Couchbase/Server/bin/')

@@ -211,7 +211,7 @@ def do_beer_queries(conn, rest, host_ip, remote):
          'expected_elapsed_time': 11, 'expected_execution_time': 11, 'execution_count': 10000})
     command_list.append({
         'queryDesc':'select fields order by', 'query': 'select abv, brewery_id from `beer-sample` where style =  "Imperial or Double India Pale Ale" order by abv;',
-        'expected_elapsed_time': 14, 'expected_execution_time': 14, 'execution_count': 10000})
+        'expected_elapsed_time': 15.4, 'expected_execution_time': 15.4, 'execution_count': 10000})
 
     return execute_commands(conn, command_list, rest, host_ip, 'beer-queries')
 
@@ -245,7 +245,7 @@ def do_airline_benchmarks(conn, rest, host_ip, remote, cluster_spec):
          'expected_elapsed_time': 38000, 'expected_execution_time': 38000})
     command_list.append(
         {'queryDesc':'Q1', 'query': "SELECT * FROM   ods WHERE  TYPE = 'OPS_FLT_LEG' AND TAIL_NBR = 'N518LR' ORDER  BY GMT_EST_DEP_DTM ;",
-         'expected_elapsed_time': 5, 'expected_execution_time': 5, 'execution_count': 10})
+         'expected_elapsed_time': 1.3, 'expected_execution_time': 1.3, 'execution_count': 10})
 
     # query 2
     big_long_query2 = """
@@ -290,7 +290,6 @@ def do_airline_benchmarks(conn, rest, host_ip, remote, cluster_spec):
 
     """
     MB-18839
-
     command_list.append({
         'index': 'CREATE INDEX IDX_GMT_EST_DEP_DTM ON ods(`GMT_EST_DEP_DTM`) WHERE (`TYPE`="CREW_ON_FLIGHT") USING GSI;',
         'expected_elapsed_time': 38000, 'expected_execution_time': 38000})

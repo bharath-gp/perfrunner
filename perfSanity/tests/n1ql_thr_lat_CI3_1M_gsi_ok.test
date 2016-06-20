@@ -10,6 +10,10 @@ index_mem_quota = 1000
 initial_nodes = 3
 num_buckets = 1
 
+[stats]
+add_snapshots = 0
+seriesly_host = 10.5.3.40
+
 [bucket]
 replica_number = 1
 password =
@@ -38,13 +42,14 @@ creates = 0
 reads = 80
 updates = 20
 deletes = 0
-throughput = 18000
-items = 1000000
+throughput = 1000
+items = 100000
 workers = 24
-time = 600
+time = 300
 n1ql_queries = range-scan
-n1ql_throughput = 5000
-n1ql_workers = 72
+n1ql_throughput = 200
+n1ql_workers = 2
+n1ql_throughput_max = 1100
 
 [n1ql-range-scan]
 prepared = range_scan

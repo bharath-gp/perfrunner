@@ -265,6 +265,10 @@ class TestConfig(Config):
         return self._get_options_as_dict('internal')
 
     @property
+    def xdcr_cluster_settings(self):
+        return self._get_options_as_dict('xdcr_cluster')
+
+    @property
     def gateway_settings(self):
         options = self._get_options_as_dict('gateway')
         return GatewaySettings(options)
@@ -486,6 +490,7 @@ class PhaseSettings(object):
     THROUGHPUT = float('inf')
     QUERY_THROUGHPUT = float('inf')
     N1QL_THROUGHPUT = float('inf')
+    N1QL_THROUGHPUT_MAX = float('inf')
 
     DOC_GEN = 'old'
     DOC_PARTITIONS = 1
@@ -526,6 +531,8 @@ class PhaseSettings(object):
                                                   self.QUERY_THROUGHPUT))
         self.n1ql_throughput = float(options.get('n1ql_throughput',
                                                  self.N1QL_THROUGHPUT))
+        self.n1ql_throughput_max = float(options.get('n1ql_throughput_max',
+                                                     self.N1QL_THROUGHPUT_MAX))
 
         self.doc_gen = options.get('doc_gen', self.DOC_GEN)
         self.doc_partitions = int(options.get('doc_partitions',

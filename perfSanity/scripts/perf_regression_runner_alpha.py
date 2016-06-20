@@ -15,6 +15,8 @@ import time
 import traceback
 import string
 import paramiko
+import tempfile
+import glob
 
 from couchbase.bucket import Bucket
 import couchbase
@@ -34,30 +36,124 @@ This program parses out the results from the files and compares them against the
 
 
 test_workload_output = '''
-[20/Oct/2015 15:01:26] INFO - Creating new database: iostatperfregression_410-4859-enterprise_27b10170106
-[20/Oct/2015 15:01:29] INFO - Creating new database: ns_serverperfregression_410-4859-enterprise_27bbucket-110170107
-[20/Oct/2015 15:02:08] INFO - Adding snapshot: perfregression_410-4859-enterprise_27b_access
-[20/Oct/2015 15:02:15] INFO - http://cbmonitor.sc.couchbase.com/reports/html/?snapshot=perfregression_410-4859-enterprise_27b_access
-[20/Oct/2015 15:03:04] INFO - http://cbmonitor.sc.couchbase.com/reports/get_corr_matrix/?snapshot=perfregression_410-4859-enterprise_27b_access
-[20/Oct/2015 15:03:31] INFO - Dry run stats: {
-    "build": "4.1.0-4859-enterprise", 
+[26/May/2016 10:23:53] INFO - Creating new database: iostatperfregression_450-2594-enterprise_3ff101525
+[26/May/2016 10:23:53] INFO - Creating new database: netperfregression_450-2594-enterprise_3ff101523
+[26/May/2016 10:23:54] INFO - Creating new database: iostatperfregression_450-2594-enterprise_3ff101523
+[26/May/2016 10:23:54] INFO - Running phase for 60 seconds
+[26/May/2016 10:23:54] INFO - Creating new database: atopperfregression_450-2594-enterprise_3ff101524
+[26/May/2016 10:23:54] INFO - Creating new database: atopperfregression_450-2594-enterprise_3ff101525
+[26/May/2016 10:23:54] INFO - Creating new database: atopperfregression_450-2594-enterprise_3ff101523
+[26/May/2016 10:24:54] INFO - Dry run stats: {
+    "build": "4.5.0-2594-enterprise", 
     "build_url": null, 
-    "metric": "perf_sanity_kv_latency_mixed_2M_short_get_95th_perf_sanity_base_test", 
-    "snapshots": [
-        "perfregression_410-4859-enterprise_27b_access"
-    ], 
-    "value": 0.56
+    "metric": "n1ql_thr_lat_CI3_1M_gsi_ok_avg_query_requests_perf_sanity_n1ql_test", 
+    "snapshots": [], 
+    "value": 120.7
 }
-[20/Oct/2015 15:03:31] INFO - Dry run stats: {
-    "build": "4.1.0-4859-enterprise", 
+[26/May/2016 10:24:54] INFO - Dry run stats: {
+    "build": "4.5.0-2594-enterprise", 
     "build_url": null, 
-    "metric": "perf_sanity_kv_latency_mixed_2M_short_set_95th_perf_sanity_base_test", 
-    "snapshots": [
-        "perfregression_410-4859-enterprise_27b_access"
-    ], 
-    "value": 0.95
+    "metric": "n1ql_thr_lat_CI3_1M_gsi_ok_perf_sanity_n1ql_test", 
+    "snapshots": [], 
+    "value": 6.48
 }
-[20/Oct/2015 15:03:31] INFO - Terminating local Celery workers
+[26/May/2016 10:24:54] INFO - Starting new HTTP connection (1): 10.1.5.25
+[26/May/2016 10:24:54] INFO - Running access phase in background: {
+    "async": false, 
+    "cases": 0, 
+    "creates": 0, 
+    "dcp_workers": 0, 
+    "ddocs": null, 
+    "deletes": 0, 
+    "doc_gen": "reverse_lookup", 
+    "doc_partitions": 1, 
+    "expiration": 0, 
+    "filename": null, 
+    "index_type": null, 
+    "items": 50000, 
+    "iterations": 1, 
+    "n1ql": null, 
+    "n1ql_op": "read", 
+    "n1ql_queries": [
+        {
+            "args": "[\"{capped_small}\"]", 
+            "prepared": "\"range_scan\"", 
+            "scan_consistency": "not_bounded"
+        }
+    ], 
+    "n1ql_throughput": 25000, 
+    "n1ql_throughput_max": Infinity, 
+    "n1ql_workers": 277, 
+    "ops": Infinity, 
+    "qparams": {}, 
+    "query_throughput": Infinity, 
+    "query_workers": 0, 
+    "reads": 80, 
+    "seq_reads": false, 
+    "seq_updates": false, 
+    "size": 1024, 
+    "spatial": {}, 
+    "throughput": 1000.0, 
+    "time": 60, 
+    "updates": 20, 
+    "workers": 24, 
+    "working_set": 100.0, 
+    "working_set_access": 100
+}
+[26/May/2016 10:24:54] INFO - Running workload generator: {
+    "async": false, 
+    "cases": 0, 
+    "creates": 0, 
+    "dcp_workers": 0, 
+    "ddocs": null, 
+    "deletes": 0, 
+    "doc_gen": "reverse_lookup", 
+    "doc_partitions": 1, 
+    "expiration": 0, 
+    "filename": null, 
+    "index_type": null, 
+    "items": 50000, 
+    "iterations": 1, 
+    "n1ql": null, 
+    "n1ql_op": "read", 
+    "n1ql_queries": [
+        {
+            "args": "[\"{capped_small}\"]", 
+            "prepared": "\"range_scan\"", 
+            "scan_consistency": "not_bounded"
+        }
+    ], 
+    "n1ql_throughput": 25000, 
+    "n1ql_throughput_max": Infinity, 
+    "n1ql_workers": 277, 
+    "ops": Infinity, 
+    "qparams": {}, 
+    "query_throughput": Infinity, 
+    "query_workers": 0, 
+    "reads": 80, 
+    "seq_reads": false, 
+    "seq_updates": false, 
+    "size": 1024, 
+    "spatial": {}, 
+    "throughput": 1000.0, 
+    "time": 60, 
+    "updates": 20, 
+    "workers": 24, 
+    "working_set": 100.0, 
+    "working_set_access": 100
+}
+[26/May/2016 10:24:56] INFO - Running phase for 60 seconds
+[26/May/2016 10:25:56] INFO - Dry run stats: {
+    "build": "4.5.0-2594-enterprise", 
+    "build_url": null, 
+    "metric": "max_throughput", 
+    "snapshots": [], 
+    "value": 229.3
+}
+[26/May/2016 10:25:56] INFO - Terminating remote Celery worker
+[26/May/2016 10:25:57] INFO - Cleaning up remote worker environment
+
+
 '''
 
 
@@ -69,25 +165,38 @@ def kill_proc(proc, timeout):
   proc.kill()
 
 def run_with_timeout(cmd, env, timeout_sec):
-  print 'the timeout value is', timeout_sec
-  proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  timeout = {"value": False}
-  timer = Timer(timeout_sec, kill_proc, [proc, timeout])
-  timer.start()
-
-  # real time output is handy but it didn't seem to work with the timeout stuff
-  #for line in iter(proc.stdout.readline, ''):
-        #print 'workload line', line
-        #workload_output += line
 
 
+  outFile =  tempfile.NamedTemporaryFile() 
+  errFile =   tempfile.NamedTemporaryFile() 
+  print 'outfile', outFile.name, ' errFile', errFile.name
 
-  print 'before communicate'
-  stdout, stderr = proc.communicate()
-  print 'after communicate'
-  timer.cancel()
-  return proc.returncode, stdout.decode("utf-8"), stderr.decode("utf-8"), timeout["value"]
+  proc = subprocess.Popen(cmd, env=env, stdout=outFile, stderr=errFile)
 
+  wait_remaining_sec = timeout_sec
+  while proc.poll() is None and wait_remaining_sec > 0:
+      time.sleep(5)
+      wait_remaining_sec -= 5
+
+  if wait_remaining_sec <= 0:
+      print 'Command timed outq'
+      proc.kill()
+      #raise ProcessIncompleteError(proc, timeout)
+      timedOut = True
+  else:
+      timedOut = False
+
+  # read temp streams from start
+  outFile.seek(0);
+  errFile.seek(0);
+  out = outFile.read()
+  err = errFile.read()
+  outFile.close()
+  errFile.close()
+
+  print 'stderr', err
+  print 'stdout', out
+  return timedOut, proc.returncode, out
 
 
 
@@ -100,7 +209,6 @@ def checkResults( results, testDescriptor, operatingSystem):
             actual_values = {}
 
             for m in matches:
-                #print '\n\nhave a match', m
                 actual = json.loads('{' + m + '}')
                 actual_values[actual['metric']] = actual  # ( json.loads('{' + m + '}') )
 
@@ -126,6 +234,7 @@ def checkResults( results, testDescriptor, operatingSystem):
 
                 for i in actual_values.keys():
                     if k in i:
+                        #print 'have an actual match', i
                         haveAMatch = True
                         actualIndex = i
                         break
@@ -164,19 +273,22 @@ def checkResults( results, testDescriptor, operatingSystem):
 
 
 
-platformDescriptor = {'windows':{'servers':['172.23.107.100','172.23.107.5','172.23.107.218'],'seriesly':'172.23.107.168','testClient':'172.23.107.168'}}
+platformDescriptor = {'windows':{'servers':['172.23.107.100','172.23.107.5','172.23.107.218'],'seriesly':'172.23.107.168','testClient':'172.23.107.168'},
+                      'centos':{'servers':['10.5.3.42','10.5.3.43','10.5.3.44'],'seriesly':'10.5.3.40','testClient':'10.5.3.40'},
+                      'centos-dev':{'servers':['10.1.5.23','10.1.5.24','10.1.5.25'],'seriesly':'10.1.5.26','testClient':'10.1.5.26'}}
 
 def executeRemoteCommand( cmd ):
        print 'executing command', cmd
        ssh = paramiko.SSHClient()
        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-       ssh.connect('172.23.107.51', username='root', password='northscale!23')
+       ssh.connect('172.23.107.51', username='root', password='xxxxx')
 
        stdin, stdout, stderr = ssh.exec_command( cmd )
 
        for line in stdout.read().splitlines():
            print(line)
        #print 'stderr', stderr
+       ssh.close()
 
 
 revertUUIDs = ['fb4e923d-bff4-c3e0-6434-8657b8b5724a', 'fbddb566-51f4-0de5-f1a1-f6d33ef97793', '68752cfe-146d-7a2d-528c-b7f6b9a74eed' ]
@@ -229,6 +341,7 @@ def resetWindowsServers():
 
 def updateSpecFile( fileName, os):
 
+    print 'updating the spec file ', fileName, 'for os', os
     f = open(fileName)
     data = f.readlines()
     f.close()
@@ -267,7 +380,7 @@ def runPerfRunner( testDescriptor, options):
     print testDescriptor['testType']
     testName = testDescriptor['testName']
 
-
+    #return checkResults( test_workload_output, testDescriptor, options.os)
 
     testFile = 'perfSanity/tests/' + testDescriptor['testFile'] + '.test'
     if options.specFile is None:
@@ -293,6 +406,10 @@ def runPerfRunner( testDescriptor, options):
 
 
 
+    # and update spec file with the ips
+    for s in spec:
+         updateSpecFile( s, options.os )
+
 
     if options.os != 'centos':
          # change the .test file to point to the seriesly host
@@ -309,10 +426,12 @@ def runPerfRunner( testDescriptor, options):
          print 'the command is', cmd
          proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
-         # and update spec file with the ips
-         for s in spec:
-             updateSpecFile( s, options.os )
 
+    print 'options.cbmonitor', options.cbmonitor
+    if options.cbmonitor is not None:
+         cmd = "sed -i '/\[stats\]/a cbmonitor_host = {0}' {1}".format( options.cbmonitor, testFile )
+         print 'the command is', cmd
+         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
     KPIs = testDescriptor['KPIs']
 
@@ -336,6 +455,7 @@ def runPerfRunner( testDescriptor, options):
             print 'Skipping Setup for N1QL Q2 queries ... '
             print '-'*100
         else:
+            #break       # uncomment to speed up things
             proc = subprocess.Popen('./scripts/setup.sh', env=my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
             for line in iter(proc.stdout.readline, ''):
@@ -352,17 +472,10 @@ def runPerfRunner( testDescriptor, options):
 
             print 'Setup complete, starting workload'
 
-    """ revert the hang detection - it did not detect the hang and suppressed the output
-    rc, stdout, stderr, timeout = run_with_timeout( './perfSanity/scripts/workload_dev.sh', my_env, 7200)  # 2 hours
-    print 'rc is', rc
-    print 'timeout is', timeout
-    print 'stderr', stderr
-    print 'stdout is', stdout
-    """
 
     # check for a looping process
-    startTime = time.time()   # in seconds to get the elapsed time
-    sys.stdout.flush()
+    #startTime = time.time()   # in seconds to get the elapsed time
+    #sys.stdout.flush()
 
 
     if options.patchScript is not None:
@@ -380,6 +493,7 @@ def runPerfRunner( testDescriptor, options):
 
 
 
+    """
     proc = subprocess.Popen('./perfSanity/scripts/workload_dev.sh', env=my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     workload_output = ''
     for line in iter(proc.stdout.readline, ''):
@@ -393,23 +507,39 @@ def runPerfRunner( testDescriptor, options):
     (stdoutdata, stderrdata) = proc.communicate()
 
     print 'stderrdata', stderrdata
+    print 'the return code is', proc.returncode
+    """
+
+    timedOut, rc, workload_output = run_with_timeout( './perfSanity/scripts/workload_dev.sh', my_env, 4500)  # 1 hour and 15 minutes
 
 
 
-    if proc.returncode == 1:
+
+
+    if timedOut:
+        print '  test timeout'
+        return [{'pass':False, 'reason':'test timed out'}]
+    elif rc == 1:
         print '  Have an error during workload generation'
         return [{'pass':False, 'reason':'Have an error during workload generation'}]
-    #elif timeout:
-        #print '  test timeout'
-        #return [{'pass':False, 'reason':'test timed out'}]
     else:
+
+
+        workerFiles = glob.glob('/tmp/worker*bucket*log')
+        for f in workerFiles:
+            print '\n\nWorker log file:', f
+            contents = open(f)
+            print contents.read()
+            os.remove( f )
+
+
         print '\n\nWorkload complete, analyzing results'
         return checkResults( workload_output, testDescriptor, options.os)
 
 
 def runForestDBTest( testDescriptor, options):
 
-    if options.version == 'windows':
+    if options.os == 'windows':
         return
 
     if options.url is not None:
@@ -419,7 +549,7 @@ def runForestDBTest( testDescriptor, options):
     testName = testDescriptor['testName']
 
     command = testDescriptor['command'] + ' --version=' + options.version
-    print 'the command is', command
+    #print 'the command is', command
 
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,shell=True)
     commandOutput = ''
@@ -513,9 +643,11 @@ def main():
     parser.add_argument('-a', '--allTests', dest='allTests', default=False, action='store_true')
     parser.add_argument('-n', '--nop', dest='nop',default=False, action='store_true')
     parser.add_argument('-p', '--patchScript', dest='patchScript',default=None)
+    parser.add_argument('-c', '--cbmonitor', dest='cbmonitor',default=None)
     parser.add_argument('-o', '--os', dest='os',default='centos')
     parser.add_argument('-e', '--rerun', dest='rerun',default=True, action='store_false')
     parser.add_argument('-y', '--queryOnly', dest='queryOnly',default=False, action='store_true')
+    parser.add_argument('-t', '--test', dest='test',default=False, action='store_true')   # run the test file only
 
     options = parser.parse_args()
 
@@ -537,6 +669,7 @@ def main():
     releaseVersion = float( '.'.join( options.version.split('.')[:2]) )
     print 'the release version is', releaseVersion
 
+
     # open the bucket
     if options.nop:
         bucket = None
@@ -544,22 +677,29 @@ def main():
         bucket = Bucket('couchbase://'+ '172.23.105.177:8091/Daily-Performance')
 
     testBucket = Bucket('couchbase://'+ '172.23.105.177:8091/Daily-Performance-Tests')
-    queryString = "select `Daily-Performance-Tests`.* from `Daily-Performance-Tests` where status != 'unimplemented'"
-    wherePredicates = []
-    if options.query is not None:
-        wherePredicates.append( ' '.join(options.query) )
-    if not options.allTests:
-        if options.betaTests:
-            wherePredicates.append( "status='beta'")
-        else:
-            wherePredicates.append( "status!='beta'")
 
-    if len(wherePredicates) > 0:
-       for i in range(len(wherePredicates)):
-            queryString += ' and ' + wherePredicates[i]
 
-    # check for versioning
-    queryString += ' and (implementedIn is missing or {0} >= implementedIn)'.format( releaseVersion)
+    if options.test:
+        queryString = 'select `Daily-Performance-Tests`.* from `Daily-Performance-Tests` where testName = "test"'
+    else:
+        queryString = "select `Daily-Performance-Tests`.* from `Daily-Performance-Tests` where status != 'unimplemented'"
+        wherePredicates = []
+        if options.query is not None:
+            wherePredicates.append( ' '.join(options.query) )
+        if not options.allTests:
+            if options.betaTests:
+                wherePredicates.append( "status='beta'")
+            else:
+                wherePredicates.append( "status!='beta'")
+   
+        if len(wherePredicates) > 0:
+           for i in range(len(wherePredicates)):
+                queryString += ' and ' + wherePredicates[i]
+
+        # check for versioning
+        queryString += ' and (implementedIn is missing or {0} >= tonumber(implementedIn))'.format( releaseVersion)
+
+
 
     print 'the query string is', queryString
     query = N1QLQuery(queryString )
@@ -568,15 +708,21 @@ def main():
     print 'the tests are', len(tests), tests
     testsToRerun = []
 
+    NOT_SUPPORTED_FOR_WINDOWS = ['fts','rebalance_views']   # rebalance views is too slow on Windows
+
+
     if options.queryOnly:
         return
 
 
     for row in tests:
         try:
-            if row['status'].lower() == 'disabled':
+            if row['status'].lower() == 'disabled' and not options.test:
                 print row['testName'], ' is disabled.'
+            elif options.os == 'windows' and row['testName'] in NOT_SUPPORTED_FOR_WINDOWS:
+                print row['testName'], ' is not supported on Windows.'
             else:
+
                 if not runTest( row, options, bucket, considerRerun=options.rerun ):
                     testsToRerun.append(row)
         except:

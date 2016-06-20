@@ -1,7 +1,7 @@
 [test_case]
 test = perfrunner.tests.n1ql.N1QLThroughputTest
-title = N1QL Q3 Array Indexing 1Bux20Mx1K, Range Scan, 30KSops, stale=ok, MOI
-summary = N1QL Q3 Array Indexing Range Scan, 30KSops
+title = N1QL Q2 1Bux20Mx1K, Singleton Unique Lookup, 14.4KGops, 3.6KSops, GSI, stale=ok
+summary = Singleton Unique Lookup, 14.4KGops, 3.6KSops
 larger_is_better = false
 
 [cluster]
@@ -19,31 +19,28 @@ eviction_policy = valueOnly
 items = 20000000
 size = 1024
 workers = 20
-doc_gen = reverse_lookup_array_indexing
+doc_gen = reverse_lookup
 doc_partitions = 1
-
-[secondary]
-indexer.settings.compaction.compaction_mode = full
 
 [n1ql]
 indexes =
-    by_achievements2::CREATE INDEX {name} ON `{bucket}`(DISTINCT ARRAY i FOR i IN achievements2 END) using gsi;
+    by_email::CREATE INDEX {name} ON `{bucket}` (email) using gsi;
 
 [access]
 creates = 0
-reads = 0
-updates = 100
+reads = 90
+updates = 10
 deletes = 0
-throughput = 30000
+throughput = 18000
 items = 20000000
 workers = 24
 time = 1200
 n1ql_queries = singleton-unique-lookup
 n1ql_throughput = 1000000
-n1ql_workers = 96
+n1ql_workers = 128
 
 [n1ql-singleton-unique-lookup]
 prepared = singleton_unique_lookup
-statement = SELECT name AS _name, street AS _street FROM `bucket-1` WHERE ANY i IN achievements2 SATISFIES i=$1 END;
+statement = SELECT * FROM `bucket-1` WHERE email = $1;
 scan_consistency = not_bounded
-args = [{achievements2[0]}]
+args = ["{email}"]

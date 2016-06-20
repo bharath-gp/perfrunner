@@ -93,6 +93,7 @@ def main():
 
     parser.add_option('-r', '--runStart', dest='runStart')
     parser.add_option('-v', '--version', dest='version')
+    parser.add_option('-o', '--os', dest='os',default='centos')
 
     options, args = parser.parse_args()
     summary = []
@@ -107,14 +108,14 @@ def main():
 
     # query for everything based on the run id
     queryBaseString = """
-    select testName, testMetric, pass, expectedValue,actualValue,`build`,reason,runStartTime from `Daily-Performance`
-    where runStartTime = '{0}' and `build`='{1}'  order by testName, runStartTime;
+    select testName, testMetric, pass, expectedValue,actualValue,`build`,reason,runStartTime, os from `Daily-Performance`
+    where runStartTime = '{0}' and `build`='{1}' order by testName, runStartTime;
     """
 
     queryString = queryBaseString.format(options.runStart, options.version)
 
 
-    #print 'the query is', queryString #.format(options.run, componentString)
+    #print 'the query is', queryString
     query = N1QLQuery(queryString )
     results = resultsBucket.n1ql_query( queryString )
 

@@ -12,7 +12,6 @@ num_buckets = 1
 
 [stats]
 add_snapshots = 0
-add_snapshots = 0
 seriesly_host = 10.5.3.40
 
 [bucket]
@@ -45,8 +44,9 @@ items = 1000
 workers = 4
 time = 300
 n1ql_queries = singleton-unique-lookup
-n1ql_throughput = 1500
-n1ql_workers = 15
+n1ql_throughput = 200
+n1ql_workers = 2
+n1ql_throughput_max = 3500
 
 [n1ql-singleton-unique-lookup]
 prepared = singleton_unique_lookup

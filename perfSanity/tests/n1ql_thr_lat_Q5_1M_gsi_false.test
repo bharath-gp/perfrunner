@@ -10,6 +10,10 @@ index_mem_quota = 1000
 initial_nodes = 3
 num_buckets = 1
 
+[stats]
+add_snapshots = 0
+seriesly_host = 10.5.3.40
+
 [bucket]
 replica_number = 1
 password =
@@ -32,13 +36,14 @@ creates = 0
 reads = 100
 updates = 0
 deletes = 0
-throughput = 18000
-items = 1000000
+throughput = 1000
+items = 100000
 workers = 24
-time = 600
+time = 300
 n1ql_queries = aggregation-query
-n1ql_throughput = 200
-n1ql_workers = 24
+n1ql_throughput = 300
+n1ql_workers = 5
+n1ql_throughput_max = 400
 
 [n1ql-aggregation-query]
 prepared = aggregation_query

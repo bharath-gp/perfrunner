@@ -12,8 +12,8 @@ num_buckets = 1
 [bucket]
 replica_number = 0
 
-[internal]
-xdcrOptimisticReplicationThreshold = 10240
+[xdcr_cluster]
+optimisticReplicationThreshold = 10240
 
 [compaction]
 db_percentage = 100

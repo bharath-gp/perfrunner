@@ -1,6 +1,6 @@
 [clusters]
 perfregression =
-    10.17.0.105:8091,kv,index,n1ql
+    10.5.3.43:8091,kv,index,n1ql
 
 [clients]
 hosts =

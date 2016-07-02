@@ -1,7 +1,6 @@
-from time import sleep
-
-from subprocess import call
 import shutil
+from subprocess import call
+from time import sleep
 
 from perfrunner.helpers.cbmonitor import with_stats
 from perfrunner.helpers.misc import log_phase, target_hash
@@ -120,6 +119,20 @@ class SrcTargetIterator(TargetIterator):
             yield TargetSettings(src_master, bucket, password, prefix)
 
 
+class DestTargetIterator(TargetIterator):
+
+    def __iter__(self):
+        password = self.test_config.bucket.password
+        prefix = self.prefix
+        masters = self.cluster_spec.yield_masters()
+        src_master = masters.next()
+        dest_master = masters.next()
+        for bucket in self.test_config.buckets:
+            if self.prefix is None:
+                prefix = target_hash(src_master, bucket)
+            yield TargetSettings(dest_master, bucket, password, prefix)
+
+
 class SymmetricXdcrTest(XdcrTest):
 
     """
@@ -169,10 +182,10 @@ class XdcrInitTest(SymmetricXdcrTest):
         for server in self.cluster_spec.yield_servers():
             self.rest.regenerate_cluster_certificate(server)
         self.remote.delete_inbox_folder()
-        SSLtype = 'go'
+
         encryption_type = ''
         key_length = 1024
-        self.remote.generate_certs(type=SSLtype, encryption=encryption_type, key_length=key_length)
+        self.remote.generate_certs(type='go', encryption=encryption_type, key_length=key_length)
 
         shutil.rmtree('/tmp/newcerts/')
         call(["mkdir", "/tmp/newcerts/"])

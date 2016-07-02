@@ -1,13 +1,12 @@
 import csv
 import json
 import os.path
-from ConfigParser import SafeConfigParser, NoOptionError, NoSectionError
+from ConfigParser import NoOptionError, NoSectionError, SafeConfigParser
 
 from decorator import decorator
 from logger import logger
 
 from perfrunner.helpers.misc import uhex
-
 
 REPO = 'https://github.com/couchbase/perfrunner'
 
@@ -248,6 +247,9 @@ class TestConfig(Config):
         access.doc_gen = load.doc_gen
         access.doc_partitions = load.doc_partitions
         access.size = load.size
+        options = self._get_options_as_dict('subdoc')
+        if options:
+            SubDocSettings(options, access)
         return access
 
     @property
@@ -288,6 +290,11 @@ class TestConfig(Config):
         options = self._get_options_as_dict('fts')
         return FtsSettings(options)
 
+    @property
+    def ycsb_settings(self):
+        options = self._get_options_as_dict('ycsb')
+        return YcsbSettings(options)
+
     def get_n1ql_query_definition(self, query_name):
         return self._get_options_as_dict('n1ql-{}'.format(query_name))
 
@@ -304,6 +311,7 @@ class TestCaseSettings(object):
         self.metric_title = options.get('title')
         self.larger_is_better = options.get('larger_is_better')
         self.monitor_clients = options.get('monitor_clients', False)
+        self.fts_server = options.get('fts', False)
         self.level = options.get('level', self.LEVEL)
         self.use_workers = int(options.get('use_workers', self.USE_WORKERS))
         self.use_backup_wrapper = options.get('use_backup_wrapper', False)
@@ -322,10 +330,12 @@ class ClusterSettings(object):
     SFWI = 0
     TCMALLOC_AGGRESSIVE_DECOMMIT = 0
     INDEX_MEM_QUOTA = 256
+    FTS_INDEX_MEM_QUOTA = 512
 
     def __init__(self, options):
         self.mem_quota = int(options.get('mem_quota'))
         self.index_mem_quota = int(options.get('index_mem_quota', self.INDEX_MEM_QUOTA))
+        self.fts_index_mem_quota = int(options.get('fts_index_mem_quota', self.FTS_INDEX_MEM_QUOTA))
         self.initial_nodes = [
             int(nodes) for nodes in options.get('initial_nodes').split()
         ]
@@ -359,7 +369,7 @@ class StatsSettings(object):
     POST_RSS = 0
     POST_CPU = 0
     SERIESLY = {'host': 'cbmonitor.sc.couchbase.com'}
-    SHOWFAST = {'host': 'showfast.sc.couchbase.com', 'password': 'password'}
+    SHOWFAST = {'host': 'cbmonitor.sc.couchbase.com', 'password': 'password'}
 
     def __init__(self, options):
         self.cbmonitor = {'host': options.get('cbmonitor_host',
@@ -426,9 +436,9 @@ class BucketSettings(object):
                                                self.EXPIRY_PAGER_SLEEP_TIME))
         self.ht_locks = int(options.get('ht_locks', self.HT_LOCKS))
         self.bfilter_enabled = options.get('bfilter_enabled', self.BFILTER_ENABLED)
-        self.proxyPort = options.get('proxyPort', None)
-        if self.proxyPort:
-            self.proxyPort = int(self.proxyPort)
+        self.proxy_port = options.get('proxyPort', None)
+        if self.proxy_port:
+            self.proxy_port = int(self.proxy_port)
 
 
 class CompactionSettings(object):
@@ -502,7 +512,7 @@ class PhaseSettings(object):
     WORKING_SET = 100
     WORKING_SET_ACCESS = 100
 
-    WORKERS = 12
+    WORKERS = 0
     QUERY_WORKERS = 0
     N1QL_WORKERS = 0
     N1QL_OP = 'read'
@@ -551,6 +561,7 @@ class PhaseSettings(object):
                                              self.QUERY_WORKERS))
         self.n1ql_workers = int(options.get('n1ql_workers',
                                             self.N1QL_WORKERS))
+        self.subdoc_workers = 0
         self.n1ql_op = options.get('n1ql_op', self.N1QL_OP)
         self.dcp_workers = int(options.get('dcp_workers', self.DCP_WORKERS))
         self.spring_workers = int(options.get('spring_workers', self.SPRING_WORKERS))
@@ -573,6 +584,8 @@ class PhaseSettings(object):
         self.iterations = int(options.get('iterations', self.ITERATIONS))
 
         self.filename = None
+        self.fts_config = None
+        self.operations = bool(int(options.get('operations', False)))
 
     def resolve_subcategories(self, config):
         subcategories = self.n1ql_queries
@@ -610,7 +623,6 @@ class XDCRSettings(object):
     XDCR_REPLICATION_TYPE = 'bidir'
     XDCR_REPLICATION_PROTOCOL = None
     XDCR_USE_SSL = False
-    XDCR_USE_CA_CERT = False
     WAN_ENABLED = False
     FILTER_EXPRESSION = None
 
@@ -620,7 +632,6 @@ class XDCRSettings(object):
         self.replication_protocol = options.get('replication_protocol',
                                                 self.XDCR_REPLICATION_PROTOCOL)
         self.use_ssl = int(options.get('use_ssl', self.XDCR_USE_SSL))
-        self.use_ca_cert = int(options.get('use_ca_cert', self.XDCR_USE_CA_CERT))
         self.wan_enabled = int(options.get('wan_enabled', self.WAN_ENABLED))
         self.filter_expression = options.get('filter_expression', self.FILTER_EXPRESSION)
 
@@ -743,6 +754,20 @@ class N1QLSettings(object):
         return str(self.__dict__)
 
 
+class SubDocSettings(object):
+
+    SUBDOC_WORKERS = 0
+    SUBDOC_FIELDS = []
+    SUBDOC_COUNTER_FIELDS = []
+    SUBDOC_DELETE_FIELDS = []
+
+    def __init__(self, options, access):
+        access.subdoc_workers = int(options.get('workers'), self.SUBDOC_WORKERS)
+        access.subdoc_fields = options.get(('fields'), self.SUBDOC_FIELDS)
+        access.subdoc_counter_fields = options.get(('counter_fields'), self.SUBDOC_COUNTER_FIELDS)
+        access.subdoc_delete_fields = options.get(('delete_fields'), self.SUBDOC_DELETE_FIELDS)
+
+
 class AccessSettings(PhaseSettings):
 
     OPS = float('inf')
@@ -754,6 +779,14 @@ class AccessSettings(PhaseSettings):
                 "and not in the [access] section")
 
         super(AccessSettings, self).__init__(options)
+
+    @property
+    def fts_settings(self):
+        options = self._get_options_as_dict('fts')
+        return FtsSettings(options)
+
+    def __str__(self):
+        return str(self.__dict__)
 
 
 class Experiment(object):
@@ -862,9 +895,36 @@ class WorkerSettings(object):
 
 class FtsSettings(object):
     def __init__(self, options):
-        self.doc_database_url = options.get("doc_database_url").strip()
-        self.name = options.get("name").strip()
-        self.items = int(options.get("items").strip())
+        self.port = int(options.get("port", 0))
+        self.name = options.get("name")
+        self.items = int(options.get("items", 0))
+        self.worker = int(options.get("worker", 0))
+        self.query = options.get("query", '')
+        self.query_size = int(options.get("query_size", 10))
+        self.throughput = 0
+        self.elastic = bool(int(options.get("elastic", 0)))
+        self.query_file = options.get("query_file", None)
+        self.type = options.get("type", "match")
+
+    def __str__(self):
+        return str(self.__dict__)
+
+
+class YcsbSettings(object):
+    def __init__(self, options):
+        self.sdk = options.get("sdk")
+        self.bucket = options.get("bucket")
+        self.jvm = options.get("jvm-args")
+        self.threads = options.get("threads")
+        self.parameters = options.get("parameters")
+        self.workload = options.get("workload_path")
+        self.size = options.get("size")
+        self.reccount = options.get("recordcount")
+        self.opcount = options.get("operationcount")
+        self.path = options.get("path")
+        self.log_file = options.get("export_file")
+        self.log_path = options.get("export_file_path")
+        self.workers = int(options.get("worker"))
 
     def __str__(self):
         return str(self.__dict__)

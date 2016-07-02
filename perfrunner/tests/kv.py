@@ -1,23 +1,24 @@
 import random
 from threading import Thread
-from time import time, sleep
+from time import sleep, time
 
 import numpy as np
 from couchbase import Couchbase
 from couchbase.user_constants import OBS_NOTFOUND
 from logger import logger
-from mc_bin_client.mc_bin_client import MemcachedClient, MemcachedError
-from tap import TAP
 
 from perfrunner.helpers.cbmonitor import with_stats
-from perfrunner.helpers.misc import pretty_dict, uhex, log_phase
+from perfrunner.helpers.metrics import MetricHelper
+from perfrunner.helpers.misc import log_phase, pretty_dict, uhex
 from perfrunner.helpers.worker import run_pillowfight_via_celery
+from perfrunner.lib.mc_bin_client import MemcachedClient, MemcachedError
+from perfrunner.lib.tap import TAP
 from perfrunner.tests import PerfTest
-from perfrunner.workloads.revAB.__main__ import produce_AB
-from perfrunner.workloads.revAB.graph import generate_graph, PersonIterator
-from perfrunner.workloads.tcmalloc import WorkloadGen
 from perfrunner.workloads.pathoGen import PathoGen
 from perfrunner.workloads.pillowfight import Pillowfight
+from perfrunner.workloads.revAB.__main__ import produce_ab
+from perfrunner.workloads.revAB.graph import PersonIterator, generate_graph
+from perfrunner.workloads.tcmalloc import WorkloadGen
 
 
 class KVTest(PerfTest):
@@ -215,6 +216,21 @@ class BeamRssTest(KVTest):
             self.reporter.post_to_sf(
                 *self.metric_helper.calc_max_beam_rss()
             )
+
+
+class BandwidthTest(KVTest):
+
+    COLLECTORS = {'bandwidth': True}
+
+    def run(self):
+        super(BandwidthTest, self).run()
+        self.metric_db_servers_helper = MetricHelper(self)
+        network_matrix = self.metric_db_servers_helper.calc_network_bandwidth
+        logger.info(
+            'Network bandwidth: {}'.format(pretty_dict(network_matrix))
+        )
+        if self.test_config.stats_settings.enabled:
+            self.reporter.post_to_sf(network_matrix)
 
 
 class WarmupTest(PerfTest):
@@ -423,7 +439,7 @@ class RevABTest(FragmentationTest):
                     self.test_config.load_settings.workers,
                 )
                 t = Thread(
-                    target=produce_AB,
+                    target=produce_ab,
                     args=(iterator,
                           self.test_config.load_settings.iterations,
                           conn),

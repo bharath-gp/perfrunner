@@ -30,6 +30,7 @@ class ClusterManager(object):
         self.initial_nodes = test_config.cluster.initial_nodes
         self.mem_quota = test_config.cluster.mem_quota
         self.index_mem_quota = test_config.cluster.index_mem_quota
+        self.fts_index_mem_quota = test_config.cluster.fts_index_mem_quota
         self.group_number = test_config.cluster.group_number or 1
         self.roles = cluster_spec.roles
 
@@ -50,6 +51,10 @@ class ClusterManager(object):
     def set_index_mem_quota(self):
         for server in self.servers():
             self.rest.set_index_mem_quota(server, self.index_mem_quota)
+
+    def set_fts_index_mem_quota(self):
+        for server in self.servers():
+            self.rest.set_fts_index_mem_quota(server, self.fts_index_mem_quota)
 
     def set_query_settings(self):
         settings = self.test_config.n1ql_settings.settings
@@ -111,16 +116,16 @@ class ClusterManager(object):
             self.rest.rebalance(master, known_nodes, ejected_nodes)
             self.monitor.monitor_rebalance(master)
 
-    def create_buckets(self, emptyBuckets=False):
+    def create_buckets(self, empty_buckets=False):
         ram_quota = self.mem_quota / (self.test_config.cluster.num_buckets +
                                       self.test_config.cluster.emptybuckets)
         replica_number = self.test_config.bucket.replica_number
         replica_index = self.test_config.bucket.replica_index
         eviction_policy = self.test_config.bucket.eviction_policy
         threads_number = self.test_config.bucket.threads_number
-        proxyPort = self.test_config.bucket.proxyPort
+        proxy_port = self.test_config.bucket.proxy_port
         password = self.test_config.bucket.password
-        buckets = self.test_config.emptybuckets if emptyBuckets else self.test_config.buckets
+        buckets = self.test_config.emptybuckets if empty_buckets else self.test_config.buckets
 
         for master in self.masters():
             for bucket_name in buckets:
@@ -132,7 +137,7 @@ class ClusterManager(object):
                                         eviction_policy=eviction_policy,
                                         threads_number=threads_number,
                                         password=password,
-                                        proxyPort=proxyPort)
+                                        proxy_port=proxy_port)
 
     def configure_auto_compaction(self):
         compaction_settings = self.test_config.compaction
@@ -151,7 +156,8 @@ class ClusterManager(object):
         for master in self.masters():
             for parameter, value in xdcr_cluster_settings.items():
                 self.rest.set_xdcr_cluster_settings(master,
-                        {parameter: int(value)})
+                                                    {parameter: int(value)})
+
     def tweak_memory(self):
         self.remote.reset_swap()
         self.remote.drop_caches()
@@ -283,6 +289,7 @@ def main():
     cm.set_services()
     cm.set_mem_quota()
     cm.set_index_mem_quota()
+    cm.set_fts_index_mem_quota()
     cm.set_auth()
 
     time.sleep(30)  # crutch
@@ -294,7 +301,7 @@ def main():
     if cm.test_config.cluster.num_buckets:
         cm.create_buckets()
     if cm.test_config.cluster.emptybuckets:
-        cm.create_buckets(emptyBuckets=True)
+        cm.create_buckets(empty_buckets=True)
     if cm.remote:
         cm.restart_with_alternative_bucket_options()
     cm.wait_until_warmed_up()

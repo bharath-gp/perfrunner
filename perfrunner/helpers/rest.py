@@ -1,7 +1,7 @@
+import base64
 import json
 import time
 import urllib2
-import base64
 from collections import namedtuple
 
 import requests
@@ -95,6 +95,16 @@ class RestHelper(object):
         api = 'http://{}/pools/default'.format(host_port)
         data = {'indexMemoryQuota': mem_quota}
         self.post(url=api, data=data)
+
+    def set_fts_index_mem_quota(self, host_port, mem_quota):
+        pass
+        '''
+        logger.info('Configuring  FTS indexer memory quota: {} to {} MB'.
+                    format(host_port, mem_quota))
+        api = 'http://{}/pools/default'.format(host_port)
+        data = {'ftsMemoryQuota': mem_quota}
+        self.post(url=api, data=data)
+        '''
 
     def set_query_settings(self, host_port, override_settings):
         host = host_port.replace('8091', '8093')
@@ -209,7 +219,7 @@ class RestHelper(object):
 
     def create_bucket(self, host_port, name, ram_quota, replica_number,
                       replica_index, eviction_policy, threads_number,
-                      password, proxyPort=None):
+                      password, proxy_port=None):
         logger.info('Adding new bucket: {}'.format(name))
 
         api = 'http://{}/pools/default/buckets'.format(host_port)
@@ -224,7 +234,7 @@ class RestHelper(object):
             'replicaIndex': replica_index,
         }
 
-        if proxyPort is None:
+        if proxy_port is None:
             data.update(
                 {
                     'authType': 'sasl',
@@ -234,7 +244,7 @@ class RestHelper(object):
             data.update(
                 {
                     'authType': 'none',
-                    'proxyPort': proxyPort
+                    'proxyPort': proxy_port,
                 })
 
         logger.info('bucket specification: {}'.format(data))
@@ -537,7 +547,7 @@ class RestHelper(object):
         logger.info(
             "Waiting for the following indexes to be ready: {}".format(indexes))
 
-        IndexesReady = [0 for index in indexes]
+        index_ready = [0 for index in indexes]
         url = 'http://{}:9102/getIndexStatus'.format(host)
         request = urllib2.Request(url)
         base64string = base64.encodestring('%s:%s' % (rest_username, rest_password)).replace('\n', '')
@@ -562,7 +572,7 @@ class RestHelper(object):
                 for i, index in enumerate(indexes):
                     status = get_index_status(json2i, index)
                     if status == 'Ready':
-                        IndexesReady[i] = 1
+                        index_ready[i] = 1
             except urllib2.HTTPError as e:
                 logger.warning("HTTPError {}".format(e))
                 api_temp = 'http://{}:9102/stats'.format(host)
@@ -576,11 +586,11 @@ class RestHelper(object):
                     val2 = data[key]
                     val = int(val1) + int(val2)
                     if val == 0:
-                        IndexesReady[i] = 1
+                        index_ready[i] = 1
         while True:
             time.sleep(1)
             check_indexes_ready()
-            if sum(IndexesReady) == len(indexes):
+            if sum(index_ready) == len(indexes):
                 break
 
         finish_ts = time.time()

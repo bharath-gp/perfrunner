@@ -5,16 +5,19 @@ from datetime import datetime
 from multiprocessing import Process
 
 import requests
-from cbagent.collectors import (NSServer, PS, TypePerf, IO, Net, ActiveTasks,
-                                SpringLatency, SpringQueryLatency,
-                                SpringSpatialQueryLatency,
-                                SpringN1QLQueryLatency, SecondaryStats, SecondaryLatencyStats,
-                                N1QLStats, SecondaryDebugStats, ObserveLatency, XdcrLag)
+from cbagent.collectors import (IO, PS, ActiveTasks, ElasticStats, FtsLatency,
+                                FtsQueryStats, FtsStats, N1QLStats, Net,
+                                NSServer, ObserveLatency, SecondaryDebugStats,
+                                SecondaryLatencyStats, SecondaryStats,
+                                SpringLatency, SpringN1QLQueryLatency,
+                                SpringQueryLatency, SpringSpatialQueryLatency,
+                                SpringSubdocLatency, TypePerf, XdcrLag)
 from cbagent.metadata_client import MetadataClient
 from decorator import decorator
 from logger import logger
 
 from perfrunner.helpers.misc import target_hash, uhex
+from perfrunner.helpers.remote import RemoteHelper
 from perfrunner.helpers.rest import RestHelper
 
 
@@ -24,22 +27,21 @@ def with_stats(method, *args, **kwargs):
 
     stats_enabled = test.test_config.stats_settings.enabled
 
+    from_ts = datetime.utcnow()
     if stats_enabled:
         if not test.cbagent.collectors:
             test.cbagent.prepare_collectors(test, **test.COLLECTORS)
             test.cbagent.update_metadata()
         test.cbagent.start()
 
-    from_ts = datetime.utcnow()
     method(*args, **kwargs)
     to_ts = datetime.utcnow()
 
     if stats_enabled:
         test.cbagent.stop()
-
         if test.test_config.stats_settings.add_snapshots:
-           test.cbagent.add_snapshot(method.__name__, from_ts, to_ts)
-           test.snapshots = test.cbagent.snapshots
+            test.cbagent.add_snapshot(method.__name__, from_ts, to_ts)
+            test.snapshots = test.cbagent.snapshots
 
     from_ts = timegm(from_ts.timetuple()) * 1000  # -> ms
     to_ts = timegm(to_ts.timetuple()) * 1000  # -> ms
@@ -50,6 +52,8 @@ class CbAgent(object):
 
     def __init__(self, test):
         self.clusters = OrderedDict()
+        self.remote = RemoteHelper(test.cluster_spec, test.test_config, verbose=True)
+
         for cluster_name, servers in test.cluster_spec.yield_clusters():
             cluster = '{}_{}_{}'.format(cluster_name,
                                         test.build.replace('.', ''),
@@ -86,7 +90,8 @@ class CbAgent(object):
             'sync_gateway_nodes':
                 test.remote.gateways if test.remote else None,
             'monitor_clients':
-                test.cluster_spec.workers if test.test_config.test_case.monitor_clients else None
+                test.cluster_spec.workers if test.test_config.test_case.monitor_clients else None,
+            'fts_server': test.test_config.test_case.fts_server
         })()
         self.lat_interval = test.test_config.stats_settings.lat_interval
         if test.cluster_spec.ssh_credentials:
@@ -101,17 +106,20 @@ class CbAgent(object):
         self.collectors = []
         self.processes = []
         self.snapshots = []
+        self.fts_stats = None
 
-    def prepare_collectors(self, test,
+    def prepare_collectors(self, test, bandwidth=False, subdoc_latency=False,
                            latency=False, secondary_stats=False,
                            query_latency=False, spatial_latency=False,
                            n1ql_latency=False, n1ql_stats=False,
                            index_latency=False, persist_latency=False,
                            replicate_latency=False, xdcr_lag=False,
                            secondary_latency=False,
-                           secondary_debugstats=False):
+                           secondary_debugstats=False,
+                           fts_latency=False, elastic_stats=False,
+                           fts_stats=False, fts_query_stats=False):
         clusters = self.clusters.keys()
-
+        self.bandwidth = bandwidth
         self.prepare_ns_server(clusters)
         self.prepare_active_tasks(clusters)
         if test.remote is None or test.remote.os != 'Cygwin':
@@ -120,6 +128,8 @@ class CbAgent(object):
             self.prepare_iostat(clusters, test)
         elif test.remote.os == 'Cygwin':
             self.prepare_tp(clusters)
+        if subdoc_latency:
+            self.prepare_subdoc_latency(clusters, test)
         if latency:
             self.prepare_latency(clusters, test)
         if query_latency:
@@ -144,6 +154,14 @@ class CbAgent(object):
             self.prepare_replicate_latency(clusters)
         if xdcr_lag:
             self.prepare_xdcr_lag(clusters)
+        if fts_latency:
+            self.prepare_fts_latency(clusters, test.test_config)
+        if fts_stats:
+            self.prepare_fts_stats(clusters, test.test_config)
+        if fts_query_stats:
+            self.prepare_fts_query_stats(clusters, test.test_config)
+        if elastic_stats:
+            self.prepare_elastic_stats(clusters, test.test_config)
 
     def prepare_ns_server(self, clusters):
         for cluster in clusters:
@@ -286,6 +304,18 @@ class CbAgent(object):
                 SpringLatency(settings, test.workload, prefix)
             )
 
+    def prepare_subdoc_latency(self, clusters, test):
+        for cluster in clusters:
+            settings = copy(self.settings)
+            settings.interval = self.lat_interval
+            settings.cluster = cluster
+            settings.master_node = self.clusters[cluster]
+            prefix = test.target_iterator.prefix or \
+                target_hash(settings.master_node.split(':')[0])
+            self.collectors.append(
+                SpringSubdocLatency(settings, test.workload, prefix)
+            )
+
     def prepare_query_latency(self, clusters, test):
         params = test.test_config.index_settings.params
         index_type = test.test_config.index_settings.index_type
@@ -329,6 +359,43 @@ class CbAgent(object):
                 SpringN1QLQueryLatency(settings, test.workload, prefix='n1ql')
             )
 
+    def prepare_fts_latency(self, clusters, test):
+        for cluster in clusters:
+            settings = copy(self.settings)
+            settings.cluster = cluster
+            settings.master_node = self.clusters[cluster]
+            self.collectors.append(
+                FtsLatency(settings, test)
+            )
+
+    def prepare_fts_stats(self, clusters, test):
+        for cluster in clusters:
+            settings = copy(self.settings)
+            settings.cluster = cluster
+            settings.master_node = self.clusters[cluster]
+            self.collectors.append(
+                FtsStats(settings, test)
+            )
+
+    def prepare_fts_query_stats(self, clusters, test):
+        for cluster in clusters:
+            settings = copy(self.settings)
+            settings.cluster = cluster
+            settings.master_node = self.clusters[cluster]
+            self.fts_stats = FtsQueryStats(settings, test)
+            self.collectors.append(
+                FtsQueryStats(settings, test)
+            )
+
+    def prepare_elastic_stats(self, clusters, test):
+        for cluster in clusters:
+            settings = copy(self.settings)
+            settings.cluster = cluster
+            settings.master_node = self.clusters[cluster]
+            self.collectors.append(
+                ElasticStats(settings, test)
+            )
+
     def prepare_active_tasks(self, clusters):
         for cluster in clusters:
             settings = copy(self.settings)
@@ -351,6 +418,8 @@ class CbAgent(object):
 
     def stop(self):
         map(lambda p: p.terminate(), self.processes)
+        if self.bandwidth:
+            self.remote.kill_process('iptraf')
         return datetime.utcnow()
 
     def trigger_reports(self, snapshot):

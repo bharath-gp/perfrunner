@@ -1,15 +1,17 @@
 build:
 	virtualenv -p python2.7 env
-	./env/bin/pip install -r requirements.txt
+	./env/bin/pip install --upgrade --quiet pip wheel
+	./env/bin/pip install --quiet --find-links wheels -r requirements.txt
 
 clean:
 	rm -fr env
 	rm -f `find . -name *.pyc`
 
-flake8:
-	./env/bin/flake8 --ignore=E501,E731 --exclude perfrunner/workloads/revAB/fittingCode perfrunner
+pep8:
+	./env/bin/flake8 --statistics perfrunner
+	./env/bin/isort --quiet --balanced --check-only --recursive perfrunner
 
 nose:
 	./env/bin/nosetests -v unittests.py
 
-test: nose flake8
+test: nose pep8

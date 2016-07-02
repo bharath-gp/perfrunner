@@ -1,15 +1,16 @@
+import multiprocessing
 import time
 
 from decorator import decorator
 
-
 from perfrunner.helpers.cbmonitor import with_stats
-from perfrunner.helpers.misc import server_group
+from perfrunner.helpers.misc import log_phase, server_group
 from perfrunner.tests import PerfTest
 from perfrunner.tests.index import IndexTest
 from perfrunner.tests.query import QueryTest
 from perfrunner.tests.spatial import SpatialQueryTest
-from perfrunner.tests.xdcr import XdcrTest, SymmetricXdcrTest
+from perfrunner.tests.xdcr import (DestTargetIterator, SymmetricXdcrTest,
+                                   XdcrInitTest, XdcrTest)
 
 
 @decorator
@@ -290,7 +291,7 @@ class RebalanceWithSpatialTest(_RebalanceWithViewsTest, SpatialQueryTest):
     COLLECTORS = {'spatial_latency': True}
 
 
-class RebalanceWithXdcrTest(XdcrTest, RebalanceTest):
+class RebalanceWithXDCRTest(XdcrTest, RebalanceTest):
 
     """
     Workflow definition for KV + bidir XDCR rebalance tests.
@@ -340,7 +341,7 @@ class RebalanceWithSymmetricXdcrTest(SymmetricXdcrTest, RebalanceTest):
         self.rebalance()
 
 
-class RebalanceWithXdcrTest(SymmetricXdcrTest, RebalanceTest):
+class RebalanceWithXdcrTest(XdcrInitTest, RebalanceTest):
 
     """
     Workflow definition unidir XDCR rebalance tests.
@@ -354,7 +355,7 @@ class RebalanceWithXdcrTest(SymmetricXdcrTest, RebalanceTest):
         initial_nodes = self.test_config.cluster.initial_nodes
         nodes_after = self.rebalance_settings.nodes_after
         group_number = self.test_config.cluster.group_number or 1
-
+        self.master = None
         for (_, servers), initial_nodes, nodes_after in zip(clusters,
                                                             initial_nodes,
                                                             nodes_after):
@@ -384,12 +385,25 @@ class RebalanceWithXdcrTest(SymmetricXdcrTest, RebalanceTest):
 
         self.enable_xdcr()
         start = time.time()
+        if self.master:
+            p = multiprocessing.Process(target=self.monitor.monitor_rebalance, args=(self.master,))
+            p.start()
         self.monitor_replication()
-        self.spent_time=int(time.time() - start)
-        self.monitor.monitor_rebalance(self.master)
+        self.spent_time = int(time.time() - start)
+
+    def load_dest(self):
+        load_settings = self.test_config.load_settings
+        log_phase('load phase', load_settings)
+
+        dest_target_iterator = DestTargetIterator(self.cluster_spec,
+                                                  self.test_config)
+        self.worker_manager.run_workload(load_settings, dest_target_iterator)
+        self.worker_manager.wait_for_workers()
 
     def run(self):
         self.load()
+        if self.test_config.cluster.initial_nodes[1] != self.rebalance_settings.nodes_after[1]:
+            self.load_dest()
         self.wait_for_persistence()
 
         self.compact_bucket()
@@ -403,13 +417,11 @@ class RebalanceWithXdcrTest(SymmetricXdcrTest, RebalanceTest):
                                     self.cluster_spec.name)
             metric_info = {
                 'title': self.test_config.test_case.metric_title.replace(
-                    "90th percentile replication lag (ms)",
-                    'Avg. Replication Throughput (docs/sec)'),
+                    "Rebalance",
+                    'Avg. Replication Throughput (docs/sec), Rebalance'),
                 'cluster': self.cluster_spec.name,
                 'larger_is_better': self.test_config.test_case.larger_is_better,
                 'level': self.test_config.test_case.level,
             }
             self.reporter.post_to_sf(round(self.test_config.load_settings.items / self.spent_time, 1),
-                                           metric=metric + '_in_bytes', metric_info=metric_info)
-
-
+                                     metric=metric + '_in_bytes', metric_info=metric_info)

@@ -1,12 +1,17 @@
-import numpy as np
 from collections import OrderedDict
+
+import numpy as np
 from logger import logger
 from seriesly import Seriesly
+
+from cbmonitor import CbAgent
+from perfrunner.helpers.remote import RemoteHelper
 
 
 class MetricHelper(object):
 
     def __init__(self, test):
+        self.test = test
         self.seriesly = Seriesly(
             test.test_config.stats_settings.seriesly['host'])
         self.test_config = test.test_config
@@ -15,6 +20,8 @@ class MetricHelper(object):
         self.cluster_names = test.cbagent.clusters.keys()
         self.build = test.build
         self.master_node = test.master_node
+        self.in_bytes_transfer = []
+        self.out_bytes_transfer = []
 
     @staticmethod
     def _get_query_params(metric, from_ts=None, to_ts=None):
@@ -82,6 +89,47 @@ class MetricHelper(object):
         queries = round(queries, 1)
 
         return queries, metric, metric_info
+
+    def parse_log(self, test_config):
+        cbagent = CbAgent(self.test)
+        cbagent.prepare_fts_query_stats(cbagent.clusters.keys(), test_config)
+        fts = cbagent.fts_stats
+        '''
+         we currently have the logs.
+         From the logs we will get the latest result
+        '''
+        fts.collect_stats()
+        total = fts.cbft_query_total()
+        return total
+
+    def calc_avg_fts_queries(self, name='FTS'):
+        metric = '{}_avg_query_requests_{}'.format(self.test_config.name,
+                                                   self.cluster_spec.name)
+        title = 'Avg. {} Query Throughput (queries/sec), {}'.format(name, self.metric_title)
+        metric_info = self._get_metric_info(title, larger_is_better=True)
+        total_queries, failed_queries, timeout_queries = self.parse_log(self.test_config)
+        time_taken = self.test_config.access_settings.time
+        qps = total_queries / time_taken
+        return round(qps, 1), metric, metric_info
+
+    def calc_latency_ftses_queries(self, percentile, dbname,
+                                   metrics, name='FTS'):
+        metric = '{}_{}'.format(self.test_config.name, self.cluster_spec.name)
+        title = '{}th percentile {} query latency (ms), {}'.\
+            format(percentile, name, self.metric_title)
+        metric_info = self._get_metric_info(title, larger_is_better=False)
+        timings = []
+        db = '{}{}'.format(dbname, self.cluster_names[0])
+        data = self.seriesly[db].get_all()
+        timings += [v[metrics] for v in data.values()]
+        fts_latency = round(np.percentile(timings, percentile), 2)
+        return round(fts_latency), metric, metric_info
+
+    def calc_ftses_index(self, elapsedtime):
+        metric = '{}_{}'.format(self.test_config.name, self.cluster_spec.name)
+        title = 'Initial Index(sec), {}'.format(self.metric_title)
+        metric_info = self._get_metric_info(title, larger_is_better=False)
+        return round(elapsedtime, 1), metric, metric_info
 
     def calc_avg_ops(self):
         """Returns the average operations per second."""
@@ -228,8 +276,7 @@ class MetricHelper(object):
             data = self.seriesly[db].get_all()
             timings += [value['latency_query'] for value in data.values()]
         query_latency = np.percentile(timings, percentile)
-
-        return round(query_latency,2), metric, metric_info
+        return round(query_latency, 2), metric, metric_info
 
     def calc_secondaryscan_latency(self, percentile):
         metric = '{}_{}'.format(self.test_config.name, self.cluster_spec.name)
@@ -246,11 +293,19 @@ class MetricHelper(object):
 
         return round(secondaryscan_latency, 2), metric, metric_info
 
-    def calc_kv_latency(self, operation, percentile):
+    def calc_kv_latency(self, operation, percentile, dbname='spring_latency'):
+        """Calculate kv latency
+        :param operation:
+        :param percentile:
+        :param dbname:  Same procedure is used for KV and subdoc .
+            for KV dbname will spring_latency.For subdoc will be spring_subdoc_latency
+        :return:
+        """
         metric = '{}_{}_{}th_{}'.format(self.test_config.name,
                                         operation,
                                         percentile,
-                                        self.cluster_spec.name)
+                                        self.cluster_spec.name
+                                        )
         title = '{}th percentile {} {}'.format(percentile,
                                                operation.upper(),
                                                self.metric_title)
@@ -258,7 +313,7 @@ class MetricHelper(object):
 
         timings = []
         for bucket in self.test_config.buckets:
-            db = 'spring_latency{}{}'.format(self.cluster_names[0], bucket)
+            db = '{}{}{}'.format(dbname, self.cluster_names[0], bucket)
             data = self.seriesly[db].get_all()
             timings += [
                 v['latency_{}'.format(operation)] for v in data.values()
@@ -468,6 +523,18 @@ class MetricHelper(object):
         rebalance_time = reporter.finish('Failover')
 
         return rebalance_time, metric, metric_info
+
+    @property
+    def calc_network_bandwidth(self):
+        self.remote = RemoteHelper(self.cluster_spec, self.test_config, verbose=True)
+        for cluster_name, servers in self.cluster_spec.yield_clusters():
+            self.in_bytes_transfer += [self.remote.read_bandwidth_stats("to", servers)]
+            self.out_bytes_transfer += [self.remote.read_bandwidth_stats("from", servers)]
+        logger.info('in bytes', self.in_bytes_transfer)
+        logger.info('out bytes', self.out_bytes_transfer)
+        return OrderedDict((
+            ('in bytes', sum(self.in_bytes_transfer[0].values())),
+            ('out bytes', sum(self.out_bytes_transfer[0].values()))))
 
     @property
     def calc_network_throughput(self):

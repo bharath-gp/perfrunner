@@ -2,7 +2,7 @@ import time
 
 from decorator import decorator
 from fabric import state
-from fabric.api import execute, get, put, run, parallel, settings
+from fabric.api import execute, get, parallel, put, run, settings
 from fabric.exceptions import CommandTimeout
 from logger import logger
 
@@ -21,11 +21,13 @@ def single_host(task, *args, **kargs):
     with settings(host_string=self.hosts[0]):
         return task(*args, **kargs)
 
+
 @decorator
 def single_client(task, *args, **kargs):
     self = args[0]
     with settings(host_string=self.cluster_spec.workers[0]):
         return task(*args, **kargs)
+
 
 @decorator
 def all_clients(task, *args, **kargs):
@@ -165,14 +167,14 @@ class RemoteLinuxHelper(object):
 
     @single_host
     def build_secondary_index(self, index_nodes, bucket, indexes, fields,
-                              secondarydb, where_map, commandPath='/opt/couchbase/bin/'):
+                              secondarydb, where_map, command_path='/opt/couchbase/bin/'):
         logger.info('building secondary indexes')
 
         # Remember what bucket:index was created
         bucket_indexes = []
 
         for index, field in zip(indexes, fields):
-            cmd = commandPath + "cbindex"
+            cmd = command_path + "cbindex"
             cmd += ' -auth=Administrator:password'
             cmd += ' -server {}'.format(index_nodes[0])
             cmd += ' -type create -bucket {}'.format(bucket)
@@ -220,7 +222,7 @@ class RemoteLinuxHelper(object):
         time.sleep(10)
 
         # build indexes
-        cmdstr = commandPath + 'cbindex -auth="Administrator:password"'
+        cmdstr = command_path + 'cbindex -auth="Administrator:password"'
         cmdstr += ' -server {}'.format(index_nodes[0])
         cmdstr += ' -type build'
         cmdstr += ' -indexes {}'.format(",".join(bucket_indexes))
@@ -337,7 +339,7 @@ class RemoteLinuxHelper(object):
         path_to_root_cert = dest_chain_folder + "root.crt"
         run('mkdir -p {}'.format(dest_chain_folder))
         put(src_chain_file + "root.crt", path_to_root_cert)
-        run('/opt/couchbase/bin/couchbase-cli ssl-manage --cluster=localhost -u Administrator -p password --upload-cluster-ca={}/root.crt'.format(dest_chain_folder ))
+        run('/opt/couchbase/bin/couchbase-cli ssl-manage --cluster=localhost -u Administrator -p password --upload-cluster-ca={}/root.crt'.format(dest_chain_folder))
 
     @all_hosts
     def reset_swap(self):
@@ -610,7 +612,6 @@ class RemoteLinuxHelper(object):
             for master in self.cluster_spec.yield_masters():
                 dates = run('ls %s/default/ | grep 20' % restore_path).split()
                 for i in range(len(dates)):
-                    print i
                     start_date = end_date = dates[i]
                     if i < len(dates) - 1:
                         end_date = dates[i + 1]
@@ -623,12 +624,41 @@ class RemoteLinuxHelper(object):
                     run(cmd)
         return int(time.time() - start)
 
+    @single_host
+    def cbrestorefts(self):
+        restore_path = self.cluster_spec.config.get('storage', 'backup_path')
+        logger.info('restore from %s' % restore_path)
+        cmd = "cd /opt/couchbase/bin && ./cbrestorewrapper {}  http://127.0.0.1:8091 " \
+              "-b {} -u Administrator -p password".format(restore_path, self.test_config.buckets[0])
+        run(cmd)
+
+    @single_host
+    def startelasticsearchplugin(self):
+        cmd = ['service elasticsearch restart',
+               'service elasticsearch stop',
+               'sudo chkconfig --add elasticsearch',
+               'sudo service elasticsearch restart',
+               'sudo service elasticsearch stop',
+               'cd /usr/share/elasticsearch',
+               'echo "couchbase.password: password" >> /etc/elasticsearch/elasticsearch.yml',
+               '/usr/share/elasticsearch/bin/plugin  -install transport-couchbase -url http://packages.couchbase.com.s3.amazonaws.com/releases/elastic-search-adapter" \
+                                                      "/2.0.0/elasticsearch-transport-couchbase-2.0.0.zip',
+               'echo "couchbase.password: password" >> /etc/elasticsearch/elasticsearch.yml',
+               'echo "couchbase.username: Administrator" >> /etc/elasticsearch/elasticsearch.yml'
+               'bin/plugin -install mobz/elasticsearch-head',
+               'sudo service elasticsearch restart']
+
+        for c in cmd.split:
+            cmd = c.strip()
+            logger.info("command executed {}".format(cmd))
+            run(cmd)
+
     @single_client
     def generate_certs(self, root_cn='Root\ Authority', type='go',
                        encryption="", key_length=1024):
         cert_folder = "/tmp/newcerts/"
         for _, master in zip(self.cluster_spec.workers,
-                                  self.cluster_spec.yield_masters()):
+                             self.cluster_spec.yield_masters()):
             for bucket in self.test_config.buckets:
                 qname = '{}-{}'.format(master.split(':')[0], bucket)
                 temp_dir = '{}-{}'.format(
@@ -682,8 +712,8 @@ class RemoteLinuxHelper(object):
                     run("openssl x509 -req -in {}{}.csr -CA {}int.pem -CAkey"
                         " {}int.key -CAcreateserial -CAserial {}intermediateCA.srl "
                         "-out .pem -days 365 -sha256".format(
-                        cert_folder, server, cert_folder, cert_folder,
-                        cert_folder, cert_folder, server))
+                            cert_folder, server, cert_folder, cert_folder,
+                            cert_folder, cert_folder, server))
                     run("openssl x509 -req -days 300 -in {}{}.csr -CA {}int.pem "
                         "-CAkey {}int.key -set_serial 01 -out {}{}.pem".format(
                             cert_folder, server, cert_folder,
@@ -694,6 +724,46 @@ class RemoteLinuxHelper(object):
     @single_client
     def copy_folder_locally(self, src_folder='/tmp/newcerts/', dest_folder='/tmp/newcerts/'):
         get(src_folder, dest_folder)
+
+    @all_hosts
+    def start_bandwidth_monitor(self, track_time=1):
+        """Run iptraf to generate various network statistics and sent output to log file
+        track_time tells IPTraf to run the specified facility for only timeout minutes.
+        """
+        kill_command = "pkill -9 iptraf; rm -rf /tmp/iptraf.log; rm -rf /var/lock/iptraf/*; " \
+                       "rm -rf /var/log/iptraf/*"
+        start_command = "sudo iptraf -i eth0 -L /tmp/iptraf.log -t %d -B /dev/null" % track_time
+        for i in range(2):
+            run(kill_command)
+            run(start_command)
+            time.sleep(2)
+            res = run('ps -ef| grep "iptraf" | grep tmp')
+            logger.info('print res', res)
+            if not res:
+                time.sleep(2)
+            else:
+                break
+
+    @all_hosts
+    def read_bandwidth_stats(self, type, servers):
+        result = 0
+        for server in servers:
+            server_ip = server.split(':')[0]
+            command = "cat /tmp/iptraf.log | grep 'FIN sent' | grep '" + type + " " + server_ip + ":11210'"
+            logger.info(run(command, quiet=True))
+            command += "| awk 'BEGIN{FS = \";\"}{if ($0 ~ /packets/) {if ($6 ~ /FIN sent/)" \
+                       " {print $7}}}' | awk '{print $3}'"
+            temp = run(command, quiet=True)
+            if temp:
+                arr = [int(t) for t in temp.split("\r\n")]
+                result += int(sum(arr))
+            time.sleep(3)
+        return result
+
+    @all_hosts
+    def kill_process(self, process=''):
+        command = "pkill -9 %s" % process
+        run(command, quiet=True)
 
     @seriesly_host
     def restart_seriesly(self):
@@ -893,6 +963,18 @@ class RemoteLinuxHelper(object):
         result = run(cmd, pty=False)
         return result
 
+    @single_client
+    def ycsb_load_run(self, path, cmd, log_path=None):
+        if log_path:
+            tmpcmd = 'rm -rf ' + log_path
+            run(tmpcmd)
+            tmpcmd = 'mkdir -p ' + log_path
+            run(tmpcmd)
+        load_run_cmd = 'cd {}'.format(path) + ' &&  mvn -pl com.yahoo.ycsb:couchbase2-binding -am ' \
+                                              'clean package -Dmaven.test.skip -Dcheckstyle.skip=true && {}'.format(cmd)
+        logger.info(" running command {}".format(load_run_cmd))
+        return run(load_run_cmd)
+
 
 class RemoteWindowsHelper(RemoteLinuxHelper):
 
@@ -1054,9 +1136,8 @@ class RemoteWindowsHelper(RemoteLinuxHelper):
     def tune_log_rotation(self):
         pass
 
-
     def build_secondary_index(self, index_nodes, bucket, indexes, fields,
                               secondarydb, where_map):
-
-        super(RemoteWindowsHelper, self).build_secondary_index(index_nodes, bucket, indexes, fields,
-                              secondarydb, where_map, commandPath='/cygdrive/c/program\\ files/Couchbase/Server/bin/')
+        super(RemoteWindowsHelper, self).build_secondary_index(
+            index_nodes, bucket, indexes, fields, secondarydb, where_map,
+            commandPath='/cygdrive/c/program\\ files/Couchbase/Server/bin/')

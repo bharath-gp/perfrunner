@@ -1,17 +1,16 @@
 import json
-
-from optparse import OptionParser
 import sys
 import time
+from optparse import OptionParser
 
-from perfrunner.settings import ClusterSpec
-from perfrunner.utils.install import CouchbaseInstaller
-from perfrunner.utils.cluster import TestConfig, ClusterManager
-
-from logger import logger
-import urllib3
-from perfrunner.helpers.rest import RestHelper
 import paramiko
+import urllib3
+from logger import logger
+
+from perfrunner.helpers.rest import RestHelper
+from perfrunner.settings import ClusterSpec
+from perfrunner.utils.cluster import ClusterManager, TestConfig
+from perfrunner.utils.install import CouchbaseInstaller
 
 """
 # An evolving thing - takes as input:
@@ -342,9 +341,9 @@ def main():
         time.sleep(30)
         """host = cluster_spec.yield_masters().next()"""
     host_ip = cluster_spec.yield_masters().next().split(':')[0]
-    URL = 'http://' + host_ip + ':8093'
-    logger.info('logging the URL: {}'.format(URL))
-    conn = urllib3.connection_from_url(URL)
+    url = 'http://' + host_ip + ':8093'
+    logger.info('logging the URL: {}'.format(url))
+    conn = urllib3.connection_from_url(url)
     rest = RestHelper(cluster_spec)
     airline_result = do_airline_benchmarks(conn, rest, host_ip, installer.remote, cluster_spec)
     beer_result = do_beer_queries(conn, rest, host_ip, installer.remote)

@@ -3,9 +3,9 @@ import time
 
 from decorator import decorator
 from logger import logger
-from mc_bin_client.mc_bin_client import (MemcachedClient, MemcachedError,
-                                         memcacheConstants)
 
+from perfrunner.lib.mc_bin_client import (MemcachedClient, MemcachedError,
+                                          memcacheConstants)
 
 SOCKET_RETRY_INTERVAL = 2
 
@@ -39,10 +39,10 @@ class MemcachedHelper(object):
 
     @retry
     def get_stats(self, host, port, bucket, stats):
-        proxyPort = self.test_config.bucket.proxyPort
-        if proxyPort is None:
+        proxy_port = self.test_config.bucket.proxy_port
+        if proxy_port is None:
             mc = MemcachedClient(host=host, port=port)
             mc.sasl_auth_plain(user=bucket, password=self.password)
         else:
-            mc = MemcachedClient(host=host, port=proxyPort)
+            mc = MemcachedClient(host=host, port=proxy_port)
         return mc.stats(stats)

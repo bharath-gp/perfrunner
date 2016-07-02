@@ -3,7 +3,7 @@ from time import sleep
 
 from celery import Celery
 from fabric import state
-from fabric.api import cd, run, local, settings, quiet
+from fabric.api import cd, local, quiet, run, settings
 from kombu import Queue
 from logger import logger
 from spring.wgen import WorkloadGen
@@ -14,7 +14,6 @@ from perfrunner.helpers.misc import log_phase
 from perfrunner.settings import REPO
 from perfrunner.workloads.pillowfight import Pillowfight
 from perfrunner.workloads.spring import Spring
-
 
 celery = Celery('workers')
 if {'--local', '-C'} & set(sys.argv):
@@ -99,12 +98,9 @@ class RemoteWorkerManager(object):
 
                 run('mkdir {}'.format(temp_dir))
                 with cd(temp_dir):
-                    run('git clone {}'.format(REPO))
+                    run('git clone -q {}'.format(REPO))
                 with cd('{}/perfrunner'.format(temp_dir)):
-                    run('virtualenv -p python2.7 env')
-                    run('PATH=/usr/lib/ccache:/usr/lib64/ccache/bin:$PATH '
-                        'env/bin/pip install '
-                        '  -r requirements.txt')
+                    run('make')
 
     def start(self):
         for worker, master in zip(self.cluster_spec.workers,
@@ -115,9 +111,11 @@ class RemoteWorkerManager(object):
                 logger.info('Starting remote Celery worker: {}'.format(qname))
 
                 temp_dir = '{}-{}/perfrunner'.format(self.temp_dir, qname)
-                run('cd {0}; ulimit -n 10240; nohup env/bin/celery worker '
-                    '-A perfrunner.helpers.worker -Q {1} -c 1 '
-                    '&>/tmp/worker_{1}.log &'.format(temp_dir, qname),
+                run('cd {0}; ulimit -n 10240; '
+                    'PYTHONOPTIMIZE=1 C_FORCE_ROOT=1 '
+                    'nohup env/bin/celery worker '
+                    '-A perfrunner.helpers.worker -Q {1} -c 1 -n {2}'
+                    '&>/tmp/worker_{1}.log &'.format(temp_dir, qname, worker),
                     pty=False)
 
     def run_workload(self, settings, target_iterator, timer=None,
@@ -186,7 +184,8 @@ class LocalWorkerManager(RemoteWorkerManager):
             for bucket in self.buckets:
                 qname = '{}-{}'.format(master.split(':')[0], bucket)
                 logger.info('Starting local Celery worker: {}'.format(qname))
-                local('nohup env/bin/celery worker '
+                local('PYTHONOPTIMIZE=1 C_FORCE_ROOT=1 '
+                      'nohup env/bin/celery worker '
                       '-A perfrunner.helpers.worker -Q {0} -c 1 -C '
                       '>/tmp/worker_{0}.log &'.format(qname))
                 sleep(self.RACE_DELAY)

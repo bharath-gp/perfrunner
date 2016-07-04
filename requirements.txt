@@ -1,5 +1,5 @@
 git+https://github.com/couchbaselabs/btrc.git#get=btrc
-git+https://github.com/couchbase/cbagent.git#egg=cbagent
+ git+https://github.com/bharath-gp/cbagent.git#egg=cbagent
 ansible==2.1.0.0
 celery==3.1.23
 couchbase==2.1.0

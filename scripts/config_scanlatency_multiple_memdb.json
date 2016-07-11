@@ -16,7 +16,7 @@
              "Id" : 1,
              "Inclusion" : 3,
              "Index" : "myindex1",
-             "NInterval" : 100
+             "NInterval" : 10000
            },
           {
              "Limit" : 1,
@@ -32,7 +32,7 @@
              "Id" : 1,
              "Inclusion" : 3,
              "Index" : "myindex2",
-             "NInterval" : 100
+             "NInterval" : 10000
            },
           {
              "Limit" : 1,
@@ -48,7 +48,7 @@
              "Id" : 1,
              "Inclusion" : 3,
              "Index" : "myindex3",
-             "NInterval" : 100
+             "NInterval" : 10000
            },
           {
              "Type" : "All",
@@ -56,7 +56,8 @@
              "Repeat" : 99999999999,
              "Bucket" : "bucket-1",
              "Id" : 1,
-             "Index" : "myindex4"
+             "Index" : "myindex4",
+             "NInterval" : 10000
            },
           {
              "Type" : "All",
@@ -64,7 +65,8 @@
              "Repeat" : 99999999999,
              "Bucket" : "bucket-1",
              "Id" : 1,
-             "Index" : "myindex5"
+             "Index" : "myindex5",
+             "NInterval" : 10000
            }
       ]
 }

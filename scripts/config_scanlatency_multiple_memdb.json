@@ -3,7 +3,7 @@
        "Clients" : 5,
        "ScanSpecs" : [
           {
-             "Limit" : 1,
+             "Limit" : 1500,
              "Low" : [
                 "000015"
              ],
@@ -19,7 +19,7 @@
              "NInterval" : 10000
            },
           {
-             "Limit" : 1,
+             "Limit" : 1500,
              "Low" : [
                 "000015"
              ],
@@ -35,7 +35,7 @@
              "NInterval" : 10000
            },
           {
-             "Limit" : 1,
+             "Limit" : 1500,
              "Low" : [
                 "000015"
              ],
@@ -52,7 +52,7 @@
            },
           {
              "Type" : "All",
-             "Limit" : 1,
+             "Limit" : 1500,
              "Repeat" : 999999999,
              "Bucket" : "bucket-1",
              "Id" : 1,
@@ -61,7 +61,7 @@
            },
           {
              "Type" : "All",
-             "Limit" : 1,
+             "Limit" : 1500,
              "Repeat" : 999999999,
              "Bucket" : "bucket-1",
              "Id" : 1,

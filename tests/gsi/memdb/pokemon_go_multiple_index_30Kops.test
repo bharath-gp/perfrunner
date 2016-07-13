@@ -30,8 +30,9 @@ db = memdb
 
 [access]
 creates = 10
-updates = 80
+updates = 30
 deletes = 10
+reads = 50
 items = 300000000
 existing_items = 200000000
 throughput = 3000
